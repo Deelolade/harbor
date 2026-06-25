@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@better-auth/prisma-adapter": "^1.6.20",
     "@fastify/bearer-auth": "^10.1.2",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/env": "^7.0.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "abstract-logging": "^2.0.1",
     "ajv": "^8.20.0",
@@ -31,6 +33,7 @@
     "json-schema-traverse": "^1.0.0",
     "light-my-request": "^6.6.0",
     "on-exit-leak-free": "^2.1.2",
+    "pg": "^8.22.0",
     "pino": "^10.3.1",
     "pino-abstract-transport": "^3.0.0",
     "pino-std-serializers": "^7.1.0",
@@ -54,6 +57,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },
