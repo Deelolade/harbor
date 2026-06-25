@@ -1,17 +1,39 @@
-import fastify from "fastify";
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
+import { COOKIE_SECRET } from "./utils/env.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
 
-const app = fastify({
+const fastify = Fastify({
   logger: true,
 });
+const port = 8800;
 
-app.get("/", async (request, reply) => {
+fastify.get("/", async (request, reply) => {
   reply.send("Hello new fastify project sample");
 });
 
-app.listen({ port: 3000 }, (err, address) => {
+// cookie setup
+await fastify.register(cookie, {
+  secret: COOKIE_SECRET,
+});
+// cors setup
+await fastify.register(cors, {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+});
+
+// route setups
+fastify.route({
+  method: ["GET", "POST"],
+  url: "/api/auth/*",
+  handler: authRoutes,
+})
+
+fastify.listen({ port }, (err, address) => {
   if (err) {
-    app.log.error(err);
+    fastify.log.error(err);
     process.exit(1);
   }
-  app.log.info(`Server listening at ${address}`);
+  fastify.log.info(`Server listening at ${address}`);
 });
