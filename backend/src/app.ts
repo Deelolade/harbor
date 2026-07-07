@@ -28,7 +28,7 @@ fastify.route({
   method: ["GET", "POST"],
   url: "/api/auth/*",
   handler: authRoutes,
-})
+});
 
 fastify.listen({ port }, (err, address) => {
   if (err) {
