@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { FiUser, FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
+import SocialButton from "../../components/auth/SocialButton";
 import { signUpSchema, type SignUpInput } from "../../lib/validations";
 import { useSignUp } from "../../hooks/use-auth";
+import { authClient } from "../../lib/auth-client";
 
 export default function SignUp() {
   const [form, setForm] = useState<SignUpInput>({
@@ -16,35 +19,53 @@ export default function SignUp() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof SignUpInput, string>>
   >({});
+  const [accepted, setAccepted] = useState(false);
   const signUp = useSignUp();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-
-    const result = signUpSchema.safeParse(form);
-    if (!result.success) {
-      const errors: Partial<Record<keyof SignUpInput, string>> = {};
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof SignUpInput;
-        if (!errors[field]) errors[field] = issue.message;
+    const r = signUpSchema.safeParse(form);
+    if (!r.success) {
+      const errs: Partial<Record<keyof SignUpInput, string>> = {};
+      for (const i of r.error.issues) {
+        const f = i.path[0] as keyof SignUpInput;
+        if (!errs[f]) errs[f] = i.message;
       }
-      setFieldErrors(errors);
+      setFieldErrors(errs);
       return;
     }
-
-    const { confirmPassword: _, ...data } = result.data;
+    if (!accepted) {
+      setFieldErrors({ confirmPassword: "You must accept the terms." });
+      return;
+    }
+    const { confirmPassword: _, ...data } = r.data;
     signUp.mutate(data);
+  };
+
+  const handleSocial = async (provider: "google" | "github" | "apple") => {
+    await authClient.signIn.social({ provider });
   };
 
   return (
     <AuthLayout
-      title="Create an account"
-      description="Fill in the details below to get started."
+      title="Create your account"
+      subtitle="Start organizing projects, tasks and workflows in one place."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link
+            to="/sign-in"
+            className="font-semibold text-white hover:underline"
+          >
+            Sign in
+          </Link>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {signUp.error && (
-          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
             {signUp.error.message || "Something went wrong."}
           </div>
         )}
@@ -53,6 +74,7 @@ export default function SignUp() {
           label="Full name"
           type="text"
           placeholder="John Doe"
+          icon={<FiUser size={18} />}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           error={fieldErrors.name}
@@ -60,9 +82,10 @@ export default function SignUp() {
         />
 
         <Input
-          label="Email"
+          label="Work email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="you@company.com"
+          icon={<FiMail size={18} />}
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           error={fieldErrors.email}
@@ -91,19 +114,62 @@ export default function SignUp() {
           autoComplete="new-password"
         />
 
+        <div className="space-y-1.5">
+          <p className="text-[12px] text-zinc-600">
+            Must be at least 8 characters with letters and numbers.
+          </p>
+        </div>
+
+        <label className="flex items-start gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[#1F1F23] bg-[#0A0A0A] accent-[#2563EB]"
+          />
+          <span className="text-[13px] text-zinc-400 leading-relaxed">
+            I agree to the{" "}
+            <span className="text-white underline cursor-pointer">
+              Terms of Service
+            </span>{" "}
+            and{" "}
+            <span className="text-white underline cursor-pointer">
+              Privacy Policy
+            </span>
+          </span>
+        </label>
+
         <Button type="submit" loading={signUp.isPending} className="w-full">
           Create account
         </Button>
 
-        <p className="text-center text-sm text-blue-200/50">
-          Already have an account?{" "}
-          <Link
-            to="/sign-in"
-            className="font-semibold text-blue-200 hover:text-white transition-colors"
-          >
-            Sign in
-          </Link>
-        </p>
+        {/* Divider */}
+        <div className="flex items-center gap-3 py-2">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">
+            or continue with
+          </span>
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        {/* Social */}
+        <div className="flex gap-3">
+          <SocialButton
+            provider="google"
+            onClick={() => handleSocial("google")}
+            className="flex-1"
+          />
+          <SocialButton
+            provider="github"
+            onClick={() => handleSocial("github")}
+            className="flex-1"
+          />
+          <SocialButton
+            provider="apple"
+            onClick={() => handleSocial("apple")}
+            className="flex-1"
+          />
+        </div>
       </form>
     </AuthLayout>
   );

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { FiUser, FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -23,36 +24,42 @@ export default function InviteAcceptance() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof InviteAcceptanceInput, string>>
   >({});
-  const acceptInvite = useAcceptInvite();
+  const accept = useAcceptInvite();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-
-    const result = inviteAcceptanceSchema.safeParse(form);
-    if (!result.success) {
-      const errors: Partial<Record<keyof InviteAcceptanceInput, string>> = {};
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof InviteAcceptanceInput;
-        if (!errors[field]) errors[field] = issue.message;
+    const r = inviteAcceptanceSchema.safeParse(form);
+    if (!r.success) {
+      const errs: Partial<Record<keyof InviteAcceptanceInput, string>> = {};
+      for (const i of r.error.issues) {
+        const f = i.path[0] as keyof InviteAcceptanceInput;
+        if (!errs[f]) errs[f] = i.message;
       }
-      setFieldErrors(errors);
+      setFieldErrors(errs);
       return;
     }
-
-    const { confirmPassword: _, ...data } = result.data;
-    acceptInvite.mutate(data);
+    const { confirmPassword: _, ...data } = r.data;
+    accept.mutate(data);
   };
 
   return (
     <AuthLayout
       title="Accept invitation"
-      description="You've been invited! Set up your account to get started."
+      subtitle="You've been invited! Set up your account to get started."
+      footer={
+        <Link
+          to="/sign-in"
+          className="font-semibold text-white hover:underline"
+        >
+          Back to sign in
+        </Link>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {acceptInvite.error && (
-          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
-            {acceptInvite.error.message || "Something went wrong."}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {accept.error && (
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
+            {accept.error.message || "Something went wrong."}
           </div>
         )}
 
@@ -60,6 +67,7 @@ export default function InviteAcceptance() {
           label="Full name"
           type="text"
           placeholder="John Doe"
+          icon={<FiUser size={18} />}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           error={fieldErrors.name}
@@ -67,9 +75,10 @@ export default function InviteAcceptance() {
         />
 
         <Input
-          label="Email"
+          label="Work email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="you@company.com"
+          icon={<FiMail size={18} />}
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           error={fieldErrors.email}
@@ -98,22 +107,9 @@ export default function InviteAcceptance() {
           autoComplete="new-password"
         />
 
-        <Button
-          type="submit"
-          loading={acceptInvite.isPending}
-          className="w-full"
-        >
+        <Button type="submit" loading={accept.isPending} className="w-full">
           Accept invitation
         </Button>
-
-        <p className="text-center text-sm">
-          <Link
-            to="/sign-in"
-            className="font-semibold text-blue-200 hover:text-white transition-colors"
-          >
-            Back to sign in
-          </Link>
-        </p>
       </form>
     </AuthLayout>
   );

@@ -2,7 +2,7 @@ import { type ButtonHTMLAttributes } from "react";
 import { cn } from "../../lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "pill";
   loading?: boolean;
 }
 
@@ -15,13 +15,15 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-all focus:outline-none focus:ring-1 focus:ring-white/20 disabled:cursor-not-allowed disabled:opacity-40";
+    "inline-flex items-center justify-center gap-2 text-[15px] font-semibold transition-all focus:outline-none disabled:cursor-not-allowed disabled:opacity-40";
 
   const variants: Record<string, string> = {
-    primary: "bg-white text-gray-950 hover:bg-gray-100 active:bg-gray-200",
+    primary:
+      "h-[52px] rounded-xl bg-[#2563EB] text-white hover:bg-[#3B82F6] active:bg-[#1D4ED8] px-6",
     secondary:
-      "border border-white/[0.08] bg-white/[0.04] text-white hover:bg-white/[0.08]",
-    ghost: "text-blue-200/70 hover:bg-white/[0.04] hover:text-white",
+      "h-[52px] rounded-xl border border-[#1F1F23] bg-[#0A0A0A] text-white hover:bg-[#111] px-6",
+    ghost: "text-zinc-400 hover:text-white px-2 py-1",
+    pill: "h-12 rounded-full border border-white/[0.08] bg-transparent text-white hover:bg-white/[0.04] hover:border-white/[0.14] px-5",
   };
 
   return (
@@ -31,11 +33,7 @@ export default function Button({
       {...props}
     >
       {loading && (
-        <svg
-          className="mr-2 h-4 w-4 animate-spin"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
+        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
           <circle
             className="opacity-25"
             cx="12"

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -14,43 +15,47 @@ export default function ForgotPassword() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof ForgotPasswordInput, string>>
   >({});
-  const forgotPassword = useForgotPassword();
+  const forgot = useForgotPassword();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-
-    const result = forgotPasswordSchema.safeParse(form);
-    if (!result.success) {
-      const errors: Partial<Record<keyof ForgotPasswordInput, string>> = {};
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof ForgotPasswordInput;
-        if (!errors[field]) errors[field] = issue.message;
+    const r = forgotPasswordSchema.safeParse(form);
+    if (!r.success) {
+      const errs: Partial<Record<keyof ForgotPasswordInput, string>> = {};
+      for (const i of r.error.issues) {
+        const f = i.path[0] as keyof ForgotPasswordInput;
+        if (!errs[f]) errs[f] = i.message;
       }
-      setFieldErrors(errors);
+      setFieldErrors(errs);
       return;
     }
-
-    forgotPassword.mutate(result.data);
+    forgot.mutate(r.data);
   };
 
   return (
     <AuthLayout
       title="Forgot password"
-      description="Enter your email and we'll send you a reset link."
+      subtitle="Enter your email and we'll send you a reset link."
+      footer={
+        <Link
+          to="/sign-in"
+          className="font-semibold text-white hover:underline"
+        >
+          Back to sign in
+        </Link>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {forgotPassword.error && (
-          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
-            {forgotPassword.error.message ||
-              "Something went wrong. Please try again."}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {forgot.error && (
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
+            {forgot.error.message || "Something went wrong."}
           </div>
         )}
-
-        {forgotPassword.isSuccess && (
-          <div className="rounded-lg bg-emerald-400/10 border border-emerald-400/20 p-3 text-sm text-emerald-300">
-            If an account with that email exists, we&apos;ve sent a password
-            reset link. Please check your inbox.
+        {forgot.isSuccess && (
+          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-[14px] text-emerald-400">
+            If an account with that email exists, we&apos;ve sent a reset link.
+            Check your inbox.
           </div>
         )}
 
@@ -58,28 +63,16 @@ export default function ForgotPassword() {
           label="Email"
           type="email"
           placeholder="you@example.com"
+          icon={<FiMail size={18} />}
           value={form.email}
           onChange={(e) => setForm({ email: e.target.value })}
           error={fieldErrors.email}
           autoComplete="email"
         />
 
-        <Button
-          type="submit"
-          loading={forgotPassword.isPending}
-          className="w-full"
-        >
+        <Button type="submit" loading={forgot.isPending} className="w-full">
           Send reset link
         </Button>
-
-        <p className="text-center text-sm">
-          <Link
-            to="/sign-in"
-            className="font-semibold text-blue-200 hover:text-white transition-colors"
-          >
-            Back to sign in
-          </Link>
-        </p>
       </form>
     </AuthLayout>
   );

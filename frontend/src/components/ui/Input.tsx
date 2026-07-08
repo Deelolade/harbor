@@ -1,37 +1,64 @@
-import { forwardRef, type InputHTMLAttributes } from "react";
+import { forwardRef, useState, type InputHTMLAttributes } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import { cn } from "../../lib/utils";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
+  icon?: React.ReactNode;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className, id, ...props }, ref) => {
+  ({ label, error, className, id, icon, type, ...props }, ref) => {
     const inputId = id || label.toLowerCase().replace(/\s+/g, "-");
+    const [show, setShow] = useState(false);
+    const isPassword = type === "password";
+    const resolvedType = isPassword ? (show ? "text" : "password") : type;
+
     return (
       <div className="space-y-1.5">
         <label
           htmlFor={inputId}
-          className="block text-sm font-medium text-blue-100/80"
+          className="block text-[13px] font-medium text-zinc-400"
         >
           {label}
         </label>
-        <input
-          ref={ref}
-          id={inputId}
-          className={cn(
-            "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white",
-            "placeholder:text-blue-200/30",
-            "focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10",
-            "disabled:cursor-not-allowed disabled:opacity-40",
-            error &&
-              "border-red-400/30 focus:border-red-400/40 focus:ring-red-400/20",
-            className,
+        <div className="relative">
+          {icon && (
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600">
+              {icon}
+            </span>
           )}
-          {...props}
-        />
-        {error && <p className="text-xs text-red-400/80">{error}</p>}
+          <input
+            ref={ref}
+            id={inputId}
+            type={resolvedType}
+            className={cn(
+              "h-[52px] w-full rounded-xl bg-[#0A0A0A] px-3.5 text-[15px] text-white transition-all",
+              "placeholder:text-zinc-600",
+              "border border-[#1F1F23]",
+              "focus:border-[#3B82F6]/30 focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/15",
+              "disabled:cursor-not-allowed disabled:opacity-40",
+              icon && "pl-10",
+              isPassword && "pr-11",
+              error &&
+                "border-red-500/40 focus:border-red-500/40 focus:ring-red-500/15",
+              className,
+            )}
+            {...props}
+          />
+          {isPassword && (
+            <button
+              type="button"
+              onClick={() => setShow(!show)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+              tabIndex={-1}
+            >
+              {show ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+            </button>
+          )}
+        </div>
+        {error && <p className="text-[12px] text-red-400">{error}</p>}
       </div>
     );
   },

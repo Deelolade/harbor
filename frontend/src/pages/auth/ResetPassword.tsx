@@ -21,42 +21,47 @@ export default function ResetPassword() {
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof ResetPasswordInput, string>>
   >({});
-  const resetPassword = useResetPassword();
+  const reset = useResetPassword();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-
-    const result = resetPasswordSchema.safeParse(form);
-    if (!result.success) {
-      const errors: Partial<Record<keyof ResetPasswordInput, string>> = {};
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof ResetPasswordInput;
-        if (!errors[field]) errors[field] = issue.message;
+    const r = resetPasswordSchema.safeParse(form);
+    if (!r.success) {
+      const errs: Partial<Record<keyof ResetPasswordInput, string>> = {};
+      for (const i of r.error.issues) {
+        const f = i.path[0] as keyof ResetPasswordInput;
+        if (!errs[f]) errs[f] = i.message;
       }
-      setFieldErrors(errors);
+      setFieldErrors(errs);
       return;
     }
-
-    const { confirmPassword: _, ...data } = result.data;
-    resetPassword.mutate(data);
+    const { confirmPassword: _, ...data } = r.data;
+    reset.mutate(data);
   };
 
   return (
     <AuthLayout
       title="Reset password"
-      description="Choose a new password for your account."
+      subtitle="Choose a new password for your account."
+      footer={
+        <Link
+          to="/sign-in"
+          className="font-semibold text-white hover:underline"
+        >
+          Back to sign in
+        </Link>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {resetPassword.error && (
-          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
-            {resetPassword.error.message || "Something went wrong."}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {reset.error && (
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
+            {reset.error.message || "Something went wrong."}
           </div>
         )}
-
-        {resetPassword.isSuccess && (
-          <div className="rounded-lg bg-emerald-400/10 border border-emerald-400/20 p-3 text-sm text-emerald-300">
-            Your password has been reset successfully!
+        {reset.isSuccess && (
+          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-[14px] text-emerald-400">
+            Password reset successfully!
           </div>
         )}
 
@@ -73,7 +78,7 @@ export default function ResetPassword() {
         <Input
           label="Confirm new password"
           type="password"
-          placeholder="Re-enter your new password"
+          placeholder="Re-enter your password"
           value={form.confirmPassword}
           onChange={(e) =>
             setForm({ ...form, confirmPassword: e.target.value })
@@ -82,22 +87,9 @@ export default function ResetPassword() {
           autoComplete="new-password"
         />
 
-        <Button
-          type="submit"
-          loading={resetPassword.isPending}
-          className="w-full"
-        >
+        <Button type="submit" loading={reset.isPending} className="w-full">
           Reset password
         </Button>
-
-        <p className="text-center text-sm">
-          <Link
-            to="/sign-in"
-            className="font-semibold text-blue-200 hover:text-white transition-colors"
-          >
-            Back to sign in
-          </Link>
-        </p>
       </form>
     </AuthLayout>
   );

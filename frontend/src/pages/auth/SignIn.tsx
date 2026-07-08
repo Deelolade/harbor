@@ -1,45 +1,62 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
+import SocialButton from "../../components/auth/SocialButton";
 import { signInSchema, type SignInInput } from "../../lib/validations";
 import { useSignIn } from "../../hooks/use-auth";
+import { authClient } from "../../lib/auth-client";
 
 export default function SignIn() {
   const [form, setForm] = useState<SignInInput>({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof SignInInput, string>>
   >({});
+  const [remember, setRemember] = useState(false);
   const signIn = useSignIn();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-
-    const result = signInSchema.safeParse(form);
-    if (!result.success) {
-      const errors: Partial<Record<keyof SignInInput, string>> = {};
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof SignInInput;
-        if (!errors[field]) errors[field] = issue.message;
+    const r = signInSchema.safeParse(form);
+    if (!r.success) {
+      const errs: Partial<Record<keyof SignInInput, string>> = {};
+      for (const i of r.error.issues) {
+        const f = i.path[0] as keyof SignInInput;
+        if (!errs[f]) errs[f] = i.message;
       }
-      setFieldErrors(errors);
+      setFieldErrors(errs);
       return;
     }
+    signIn.mutate(r.data);
+  };
 
-    signIn.mutate(result.data);
+  const handleSocial = async (provider: "google" | "github" | "apple") => {
+    await authClient.signIn.social({ provider });
   };
 
   return (
     <AuthLayout
-      title="Sign in"
-      description="Welcome back! Enter your credentials to continue."
+      title="Welcome back"
+      subtitle="Sign in to continue managing your workspace."
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/sign-up"
+            className="font-semibold text-white hover:underline"
+          >
+            Create one
+          </Link>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {signIn.error && (
-          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
-            {signIn.error.message || "Sign in failed. Please try again."}
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
+            {signIn.error.message || "Sign in failed."}
           </div>
         )}
 
@@ -47,6 +64,7 @@ export default function SignIn() {
           label="Email"
           type="email"
           placeholder="you@example.com"
+          icon={<FiMail size={18} />}
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           error={fieldErrors.email}
@@ -63,10 +81,19 @@ export default function SignIn() {
           autoComplete="current-password"
         />
 
-        <div className="text-right">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-[#1F1F23] bg-[#0A0A0A] accent-[#2563EB]"
+            />
+            <span className="text-[13px] text-zinc-400">Remember me</span>
+          </label>
           <Link
             to="/forgot-password"
-            className="text-sm font-medium text-blue-300/80 hover:text-blue-200 transition-colors"
+            className="text-[13px] font-medium text-zinc-400 hover:text-white transition-colors"
           >
             Forgot password?
           </Link>
@@ -76,15 +103,33 @@ export default function SignIn() {
           Sign in
         </Button>
 
-        <p className="text-center text-sm text-blue-200/50">
-          Don&apos;t have an account?{" "}
-          <Link
-            to="/sign-up"
-            className="font-semibold text-blue-200 hover:text-white transition-colors"
-          >
-            Sign up
-          </Link>
-        </p>
+        {/* Divider */}
+        <div className="flex items-center gap-3 py-2">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">
+            or continue with
+          </span>
+          <div className="h-px flex-1 bg-white/[0.06]" />
+        </div>
+
+        {/* Social */}
+        <div className="flex gap-3">
+          <SocialButton
+            provider="google"
+            onClick={() => handleSocial("google")}
+            className="flex-1"
+          />
+          <SocialButton
+            provider="github"
+            onClick={() => handleSocial("github")}
+            className="flex-1"
+          />
+          <SocialButton
+            provider="apple"
+            onClick={() => handleSocial("apple")}
+            className="flex-1"
+          />
+        </div>
       </form>
     </AuthLayout>
   );
