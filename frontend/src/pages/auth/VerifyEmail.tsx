@@ -16,6 +16,7 @@ export default function VerifyEmail() {
 
   return (
     <AuthLayout
+      mode="signin"
       title="Verify email"
       subtitle={
         verify.isPending

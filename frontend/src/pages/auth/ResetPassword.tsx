@@ -42,6 +42,7 @@ export default function ResetPassword() {
 
   return (
     <AuthLayout
+      mode="signin"
       title="Reset password"
       subtitle="Choose a new password for your account."
       footer={

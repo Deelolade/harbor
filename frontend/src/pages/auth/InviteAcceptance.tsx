@@ -45,6 +45,7 @@ export default function InviteAcceptance() {
 
   return (
     <AuthLayout
+      mode="signup"
       title="Accept invitation"
       subtitle="You've been invited! Set up your account to get started."
       footer={

@@ -33,12 +33,13 @@ export default function SignIn() {
     signIn.mutate(r.data);
   };
 
-  const handleSocial = async (provider: "google" | "github" | "apple") => {
+  const handleSocial = async (provider: "google" | "github") => {
     await authClient.signIn.social({ provider });
   };
 
   return (
     <AuthLayout
+      mode="signin"
       title="Welcome back"
       subtitle="Sign in to continue managing your workspace."
       footer={
@@ -113,21 +114,14 @@ export default function SignIn() {
         </div>
 
         {/* Social */}
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           <SocialButton
             provider="google"
             onClick={() => handleSocial("google")}
-            className="flex-1"
           />
           <SocialButton
             provider="github"
             onClick={() => handleSocial("github")}
-            className="flex-1"
-          />
-          <SocialButton
-            provider="apple"
-            onClick={() => handleSocial("apple")}
-            className="flex-1"
           />
         </div>
       </form>

@@ -1,11 +1,14 @@
 import { type ReactNode } from "react";
 import { FiLock } from "react-icons/fi";
-import IllustrationPanel from "./IllustrationPanel";
+import VisualPanel from "./VisualPanel";
+
+type Mode = "signup" | "signin";
 
 interface AuthLayoutProps {
   title: string;
   subtitle: string;
   footer: ReactNode;
+  mode: Mode;
   children: ReactNode;
 }
 
@@ -13,6 +16,7 @@ export default function AuthLayout({
   title,
   subtitle,
   footer,
+  mode,
   children,
 }: AuthLayoutProps) {
   return (
@@ -46,9 +50,9 @@ export default function AuthLayout({
         </div>
       </div>
 
-      {/* ── Right: Illustration ── */}
+      {/* ── Right: Interactive Visual ── */}
       <div className="relative hidden w-1/2 overflow-hidden bg-[#080808] lg:block">
-        <IllustrationPanel />
+        <VisualPanel mode={mode} />
       </div>
     </div>
   );

@@ -35,6 +35,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
+      mode="signin"
       title="Forgot password"
       subtitle="Enter your email and we'll send you a reset link."
       footer={
