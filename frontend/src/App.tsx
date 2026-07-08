@@ -8,8 +8,8 @@ import InviteAcceptance from "./pages/auth/InviteAcceptance";
 
 function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <h1 className="text-3xl font-bold text-gray-900">Welcome!</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
+      <h1 className="text-2xl font-bold">Welcome!</h1>
     </div>
   );
 }

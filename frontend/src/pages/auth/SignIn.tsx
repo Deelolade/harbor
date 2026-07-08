@@ -2,14 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "../../components/ui/Card";
+import AuthLayout from "../../components/auth/AuthLayout";
 import { signInSchema, type SignInInput } from "../../lib/validations";
 import { useSignIn } from "../../hooks/use-auth";
 
@@ -39,69 +32,60 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>
-            Welcome back! Enter your credentials to continue.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Sign in"
+      description="Welcome back! Enter your credentials to continue."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {signIn.error && (
+          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
+            {signIn.error.message || "Sign in failed. Please try again."}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {signIn.error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {signIn.error.message || "Sign in failed. Please try again."}
-              </div>
-            )}
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          error={fieldErrors.email}
+          autoComplete="email"
+        />
 
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              error={fieldErrors.email}
-              autoComplete="email"
-            />
+        <Input
+          label="Password"
+          type="password"
+          placeholder="••••••••"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          error={fieldErrors.password}
+          autoComplete="current-password"
+        />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              error={fieldErrors.password}
-              autoComplete="current-password"
-            />
+        <div className="text-right">
+          <Link
+            to="/forgot-password"
+            className="text-sm font-medium text-blue-300/80 hover:text-blue-200 transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
-            <div className="text-right">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-gray-900 hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          </CardContent>
+        <Button type="submit" loading={signIn.isPending} className="w-full">
+          Sign in
+        </Button>
 
-          <CardFooter className="flex-col gap-3">
-            <Button type="submit" loading={signIn.isPending} className="w-full">
-              Sign In
-            </Button>
-            <p className="text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
-              <Link
-                to="/sign-up"
-                className="font-medium text-gray-900 hover:underline"
-              >
-                Sign Up
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <p className="text-center text-sm text-blue-200/50">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/sign-up"
+            className="font-semibold text-blue-200 hover:text-white transition-colors"
+          >
+            Sign up
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

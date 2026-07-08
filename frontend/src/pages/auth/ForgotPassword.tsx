@@ -2,14 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "../../components/ui/Card";
+import AuthLayout from "../../components/auth/AuthLayout";
 import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
@@ -42,61 +35,52 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your email and we&apos;ll send you a reset link.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Forgot password"
+      description="Enter your email and we'll send you a reset link."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {forgotPassword.error && (
+          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
+            {forgotPassword.error.message ||
+              "Something went wrong. Please try again."}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {forgotPassword.error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {forgotPassword.error.message ||
-                  "Something went wrong. Please try again."}
-              </div>
-            )}
+        {forgotPassword.isSuccess && (
+          <div className="rounded-lg bg-emerald-400/10 border border-emerald-400/20 p-3 text-sm text-emerald-300">
+            If an account with that email exists, we&apos;ve sent a password
+            reset link. Please check your inbox.
+          </div>
+        )}
 
-            {forgotPassword.isSuccess && (
-              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
-                If an account with that email exists, we&apos;ve sent a password
-                reset link. Please check your inbox.
-              </div>
-            )}
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(e) => setForm({ email: e.target.value })}
+          error={fieldErrors.email}
+          autoComplete="email"
+        />
 
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ email: e.target.value })}
-              error={fieldErrors.email}
-              autoComplete="email"
-            />
-          </CardContent>
+        <Button
+          type="submit"
+          loading={forgotPassword.isPending}
+          className="w-full"
+        >
+          Send reset link
+        </Button>
 
-          <CardFooter className="flex-col gap-3">
-            <Button
-              type="submit"
-              loading={forgotPassword.isPending}
-              className="w-full"
-            >
-              Send Reset Link
-            </Button>
-            <p className="text-sm text-gray-500">
-              <Link
-                to="/sign-in"
-                className="font-medium text-gray-900 hover:underline"
-              >
-                Back to Sign In
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <p className="text-center text-sm">
+          <Link
+            to="/sign-in"
+            className="font-semibold text-blue-200 hover:text-white transition-colors"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

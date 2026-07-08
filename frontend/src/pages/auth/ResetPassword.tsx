@@ -2,14 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "../../components/ui/Card";
+import AuthLayout from "../../components/auth/AuthLayout";
 import {
   resetPasswordSchema,
   type ResetPasswordInput,
@@ -49,76 +42,63 @@ export default function ResetPassword() {
     resetPassword.mutate(data);
   };
 
-  const displayError = resetPassword.error?.message || "";
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
-          <CardDescription>
-            Choose a new password for your account.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Reset password"
+      description="Choose a new password for your account."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {resetPassword.error && (
+          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
+            {resetPassword.error.message || "Something went wrong."}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {displayError && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {displayError}
-              </div>
-            )}
+        {resetPassword.isSuccess && (
+          <div className="rounded-lg bg-emerald-400/10 border border-emerald-400/20 p-3 text-sm text-emerald-300">
+            Your password has been reset successfully!
+          </div>
+        )}
 
-            {resetPassword.isSuccess && (
-              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
-                Your password has been reset successfully!
-              </div>
-            )}
+        <Input
+          label="New password"
+          type="password"
+          placeholder="At least 8 characters"
+          value={form.newPassword}
+          onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+          error={fieldErrors.newPassword}
+          autoComplete="new-password"
+        />
 
-            <Input
-              label="New Password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={form.newPassword}
-              onChange={(e) =>
-                setForm({ ...form, newPassword: e.target.value })
-              }
-              error={fieldErrors.newPassword}
-              autoComplete="new-password"
-            />
+        <Input
+          label="Confirm new password"
+          type="password"
+          placeholder="Re-enter your new password"
+          value={form.confirmPassword}
+          onChange={(e) =>
+            setForm({ ...form, confirmPassword: e.target.value })
+          }
+          error={fieldErrors.confirmPassword}
+          autoComplete="new-password"
+        />
 
-            <Input
-              label="Confirm New Password"
-              type="password"
-              placeholder="Re-enter your new password"
-              value={form.confirmPassword}
-              onChange={(e) =>
-                setForm({ ...form, confirmPassword: e.target.value })
-              }
-              error={fieldErrors.confirmPassword}
-              autoComplete="new-password"
-            />
-          </CardContent>
+        <Button
+          type="submit"
+          loading={resetPassword.isPending}
+          className="w-full"
+        >
+          Reset password
+        </Button>
 
-          <CardFooter className="flex-col gap-3">
-            <Button
-              type="submit"
-              loading={resetPassword.isPending}
-              className="w-full"
-            >
-              Reset Password
-            </Button>
-            <p className="text-sm text-gray-500">
-              <Link
-                to="/sign-in"
-                className="font-medium text-gray-900 hover:underline"
-              >
-                Back to Sign In
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <p className="text-center text-sm">
+          <Link
+            to="/sign-in"
+            className="font-semibold text-blue-200 hover:text-white transition-colors"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

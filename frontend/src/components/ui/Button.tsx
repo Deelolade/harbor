@@ -15,12 +15,13 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-all focus:outline-none focus:ring-1 focus:ring-white/20 disabled:cursor-not-allowed disabled:opacity-40";
 
   const variants: Record<string, string> = {
-    primary: "bg-gray-900 text-white hover:bg-gray-800",
-    secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
-    ghost: "text-gray-600 hover:bg-gray-100",
+    primary: "bg-white text-gray-950 hover:bg-gray-100 active:bg-gray-200",
+    secondary:
+      "border border-white/[0.08] bg-white/[0.04] text-white hover:bg-white/[0.08]",
+    ghost: "text-blue-200/70 hover:bg-white/[0.04] hover:text-white",
   };
 
   return (

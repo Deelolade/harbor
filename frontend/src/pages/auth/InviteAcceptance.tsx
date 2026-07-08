@@ -2,14 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "../../components/ui/Card";
+import AuthLayout from "../../components/auth/AuthLayout";
 import {
   inviteAcceptanceSchema,
   type InviteAcceptanceInput,
@@ -51,109 +44,77 @@ export default function InviteAcceptance() {
     acceptInvite.mutate(data);
   };
 
-  const displayError = acceptInvite.error?.message || "";
-
-  if (!invitationToken) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <CardTitle>Invalid Invitation</CardTitle>
-            <CardDescription>
-              The invitation link you followed is missing a token. Please
-              contact your administrator for a new invitation.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-center">
-            <Link to="/sign-in">
-              <Button variant="secondary">Back to Sign In</Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Accept Invitation</CardTitle>
-          <CardDescription>
-            You&apos;ve been invited! Set up your account to get started.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Accept invitation"
+      description="You've been invited! Set up your account to get started."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {acceptInvite.error && (
+          <div className="rounded-lg bg-red-400/10 border border-red-400/20 p-3 text-sm text-red-300">
+            {acceptInvite.error.message || "Something went wrong."}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {displayError && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {displayError}
-              </div>
-            )}
+        <Input
+          label="Full name"
+          type="text"
+          placeholder="John Doe"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          error={fieldErrors.name}
+          autoComplete="name"
+        />
 
-            <Input
-              label="Full Name"
-              type="text"
-              placeholder="John Doe"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              error={fieldErrors.name}
-              autoComplete="name"
-            />
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          error={fieldErrors.email}
+          autoComplete="email"
+        />
 
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              error={fieldErrors.email}
-              autoComplete="email"
-            />
+        <Input
+          label="Password"
+          type="password"
+          placeholder="At least 8 characters"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          error={fieldErrors.password}
+          autoComplete="new-password"
+        />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              error={fieldErrors.password}
-              autoComplete="new-password"
-            />
+        <Input
+          label="Confirm password"
+          type="password"
+          placeholder="Re-enter your password"
+          value={form.confirmPassword}
+          onChange={(e) =>
+            setForm({ ...form, confirmPassword: e.target.value })
+          }
+          error={fieldErrors.confirmPassword}
+          autoComplete="new-password"
+        />
 
-            <Input
-              label="Confirm Password"
-              type="password"
-              placeholder="Re-enter your password"
-              value={form.confirmPassword}
-              onChange={(e) =>
-                setForm({ ...form, confirmPassword: e.target.value })
-              }
-              error={fieldErrors.confirmPassword}
-              autoComplete="new-password"
-            />
-          </CardContent>
+        <Button
+          type="submit"
+          loading={acceptInvite.isPending}
+          className="w-full"
+        >
+          Accept invitation
+        </Button>
 
-          <CardFooter className="flex-col gap-3">
-            <Button
-              type="submit"
-              loading={acceptInvite.isPending}
-              className="w-full"
-            >
-              Accept Invitation
-            </Button>
-            <p className="text-sm text-gray-500">
-              <Link
-                to="/sign-in"
-                className="font-medium text-gray-900 hover:underline"
-              >
-                Back to Sign In
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+        <p className="text-center text-sm">
+          <Link
+            to="/sign-in"
+            className="font-semibold text-blue-200 hover:text-white transition-colors"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }
