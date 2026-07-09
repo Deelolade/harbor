@@ -15,8 +15,9 @@
     "better-auth": "^1.6.23",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-icons": "^5.7.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.18.1",
+    "sonner": "^2.0.7",
     "tailwindcss": "^4.3.2",
     "zod": "^4.4.3"
   },

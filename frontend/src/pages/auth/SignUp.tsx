@@ -11,14 +11,9 @@ import { authClient } from "../../lib/auth-client";
 
 export default function SignUp() {
   const [form, setForm] = useState<SignUpInput>({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    name: "", email: "", password: "", confirmPassword: "",
   });
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof SignUpInput, string>>
-  >({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof SignUpInput, string>>>({});
   const [accepted, setAccepted] = useState(false);
   const signUp = useSignUp();
 
@@ -55,29 +50,18 @@ export default function SignUp() {
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            to="/sign-in"
-            className="font-semibold text-white hover:underline"
-          >
-            Sign in
-          </Link>
+          <Link to="/sign-in" className="font-semibold text-white hover:underline">Sign in</Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {signUp.error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
-            {signUp.error.message || "Something went wrong."}
-          </div>
-        )}
-
         <Input
           label="Full name"
           type="text"
           placeholder="John Doe"
           icon={<FiUser size={18} />}
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={e => setForm({ ...form, name: e.target.value })}
           error={fieldErrors.name}
           autoComplete="name"
         />
@@ -88,7 +72,7 @@ export default function SignUp() {
           placeholder="you@company.com"
           icon={<FiMail size={18} />}
           value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          onChange={e => setForm({ ...form, email: e.target.value })}
           error={fieldErrors.email}
           autoComplete="email"
         />
@@ -98,7 +82,7 @@ export default function SignUp() {
           type="password"
           placeholder="At least 8 characters"
           value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          onChange={e => setForm({ ...form, password: e.target.value })}
           error={fieldErrors.password}
           autoComplete="new-password"
         />
@@ -108,35 +92,27 @@ export default function SignUp() {
           type="password"
           placeholder="Re-enter your password"
           value={form.confirmPassword}
-          onChange={(e) =>
-            setForm({ ...form, confirmPassword: e.target.value })
-          }
+          onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
           error={fieldErrors.confirmPassword}
           autoComplete="new-password"
         />
 
-        <div className="space-y-1.5">
-          <p className="text-[12px] text-zinc-600">
-            Must be at least 8 characters with letters and numbers.
-          </p>
-        </div>
+        <p className="text-[12px] text-zinc-600">
+          Must be at least 8 characters with letters and numbers.
+        </p>
 
         <label className="flex items-start gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={accepted}
-            onChange={(e) => setAccepted(e.target.checked)}
+            onChange={e => setAccepted(e.target.checked)}
             className="mt-0.5 h-4 w-4 rounded border-[#1F1F23] bg-[#0A0A0A] accent-[#2563EB]"
           />
           <span className="text-[13px] text-zinc-400 leading-relaxed">
             I agree to the{" "}
-            <span className="text-white underline cursor-pointer">
-              Terms of Service
-            </span>{" "}
-            and{" "}
-            <span className="text-white underline cursor-pointer">
-              Privacy Policy
-            </span>
+            <span className="text-white underline cursor-pointer">Terms of Service</span>
+            {" "}and{" "}
+            <span className="text-white underline cursor-pointer">Privacy Policy</span>
           </span>
         </label>
 
@@ -144,25 +120,15 @@ export default function SignUp() {
           Create account
         </Button>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 py-2">
           <div className="h-px flex-1 bg-white/[0.06]" />
-          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">
-            or continue with
-          </span>
+          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">or continue with</span>
           <div className="h-px flex-1 bg-white/[0.06]" />
         </div>
 
-        {/* Social */}
         <div className="grid grid-cols-2 gap-2.5">
-          <SocialButton
-            provider="google"
-            onClick={() => handleSocial("google")}
-          />
-          <SocialButton
-            provider="github"
-            onClick={() => handleSocial("github")}
-          />
+          <SocialButton provider="google" onClick={() => handleSocial("google")} />
+          <SocialButton provider="github" onClick={() => handleSocial("github")} />
         </div>
       </form>
     </AuthLayout>

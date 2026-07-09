@@ -11,9 +11,7 @@ import { authClient } from "../../lib/auth-client";
 
 export default function SignIn() {
   const [form, setForm] = useState<SignInInput>({ email: "", password: "" });
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof SignInInput, string>>
-  >({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof SignInInput, string>>>({});
   const [remember, setRemember] = useState(false);
   const signIn = useSignIn();
 
@@ -45,29 +43,18 @@ export default function SignIn() {
       footer={
         <>
           Don&apos;t have an account?{" "}
-          <Link
-            to="/sign-up"
-            className="font-semibold text-white hover:underline"
-          >
-            Create one
-          </Link>
+          <Link to="/sign-up" className="font-semibold text-white hover:underline">Create one</Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {signIn.error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
-            {signIn.error.message || "Sign in failed."}
-          </div>
-        )}
-
         <Input
           label="Email"
           type="email"
           placeholder="you@example.com"
           icon={<FiMail size={18} />}
           value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          onChange={e => setForm({ ...form, email: e.target.value })}
           error={fieldErrors.email}
           autoComplete="email"
         />
@@ -77,7 +64,7 @@ export default function SignIn() {
           type="password"
           placeholder="••••••••"
           value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          onChange={e => setForm({ ...form, password: e.target.value })}
           error={fieldErrors.password}
           autoComplete="current-password"
         />
@@ -87,15 +74,12 @@ export default function SignIn() {
             <input
               type="checkbox"
               checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
+              onChange={e => setRemember(e.target.checked)}
               className="h-4 w-4 rounded border-[#1F1F23] bg-[#0A0A0A] accent-[#2563EB]"
             />
             <span className="text-[13px] text-zinc-400">Remember me</span>
           </label>
-          <Link
-            to="/forgot-password"
-            className="text-[13px] font-medium text-zinc-400 hover:text-white transition-colors"
-          >
+          <Link to="/forgot-password" className="text-[13px] font-medium text-zinc-400 hover:text-white transition-colors">
             Forgot password?
           </Link>
         </div>
@@ -104,25 +88,15 @@ export default function SignIn() {
           Sign in
         </Button>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 py-2">
           <div className="h-px flex-1 bg-white/[0.06]" />
-          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">
-            or continue with
-          </span>
+          <span className="text-[12px] font-medium uppercase tracking-wider text-zinc-600">or continue with</span>
           <div className="h-px flex-1 bg-white/[0.06]" />
         </div>
 
-        {/* Social */}
         <div className="grid grid-cols-2 gap-2.5">
-          <SocialButton
-            provider="google"
-            onClick={() => handleSocial("google")}
-          />
-          <SocialButton
-            provider="github"
-            onClick={() => handleSocial("github")}
-          />
+          <SocialButton provider="google" onClick={() => handleSocial("google")} />
+          <SocialButton provider="github" onClick={() => handleSocial("github")} />
         </div>
       </form>
     </AuthLayout>

@@ -4,17 +4,12 @@ import { FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
-import {
-  forgotPasswordSchema,
-  type ForgotPasswordInput,
-} from "../../lib/validations";
+import { forgotPasswordSchema, type ForgotPasswordInput } from "../../lib/validations";
 import { useForgotPassword } from "../../hooks/use-auth";
 
 export default function ForgotPassword() {
   const [form, setForm] = useState<ForgotPasswordInput>({ email: "" });
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof ForgotPasswordInput, string>>
-  >({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ForgotPasswordInput, string>>>({});
   const forgot = useForgotPassword();
 
   const handleSubmit = (e: FormEvent) => {
@@ -39,34 +34,19 @@ export default function ForgotPassword() {
       title="Forgot password"
       subtitle="Enter your email and we'll send you a reset link."
       footer={
-        <Link
-          to="/sign-in"
-          className="font-semibold text-white hover:underline"
-        >
+        <Link to="/sign-in" className="font-semibold text-white hover:underline">
           Back to sign in
         </Link>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {forgot.error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
-            {forgot.error.message || "Something went wrong."}
-          </div>
-        )}
-        {forgot.isSuccess && (
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-[14px] text-emerald-400">
-            If an account with that email exists, we&apos;ve sent a reset link.
-            Check your inbox.
-          </div>
-        )}
-
         <Input
           label="Email"
           type="email"
           placeholder="you@example.com"
           icon={<FiMail size={18} />}
           value={form.email}
-          onChange={(e) => setForm({ email: e.target.value })}
+          onChange={e => setForm({ email: e.target.value })}
           error={fieldErrors.email}
           autoComplete="email"
         />

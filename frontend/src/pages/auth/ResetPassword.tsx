@@ -3,10 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
-import {
-  resetPasswordSchema,
-  type ResetPasswordInput,
-} from "../../lib/validations";
+import { resetPasswordSchema, type ResetPasswordInput } from "../../lib/validations";
 import { useResetPassword } from "../../hooks/use-auth";
 
 export default function ResetPassword() {
@@ -14,13 +11,9 @@ export default function ResetPassword() {
   const token = searchParams.get("token") || "";
 
   const [form, setForm] = useState<ResetPasswordInput>({
-    token,
-    newPassword: "",
-    confirmPassword: "",
+    token, newPassword: "", confirmPassword: "",
   });
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof ResetPasswordInput, string>>
-  >({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ResetPasswordInput, string>>>({});
   const reset = useResetPassword();
 
   const handleSubmit = (e: FormEvent) => {
@@ -46,32 +39,18 @@ export default function ResetPassword() {
       title="Reset password"
       subtitle="Choose a new password for your account."
       footer={
-        <Link
-          to="/sign-in"
-          className="font-semibold text-white hover:underline"
-        >
+        <Link to="/sign-in" className="font-semibold text-white hover:underline">
           Back to sign in
         </Link>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {reset.error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-[14px] text-red-400">
-            {reset.error.message || "Something went wrong."}
-          </div>
-        )}
-        {reset.isSuccess && (
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-[14px] text-emerald-400">
-            Password reset successfully!
-          </div>
-        )}
-
         <Input
           label="New password"
           type="password"
           placeholder="At least 8 characters"
           value={form.newPassword}
-          onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+          onChange={e => setForm({ ...form, newPassword: e.target.value })}
           error={fieldErrors.newPassword}
           autoComplete="new-password"
         />
@@ -81,9 +60,7 @@ export default function ResetPassword() {
           type="password"
           placeholder="Re-enter your password"
           value={form.confirmPassword}
-          onChange={(e) =>
-            setForm({ ...form, confirmPassword: e.target.value })
-          }
+          onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
           error={fieldErrors.confirmPassword}
           autoComplete="new-password"
         />

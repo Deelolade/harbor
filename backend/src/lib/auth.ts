@@ -1,12 +1,11 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
-import { PrismaClient } from "../generated/prisma/client.js";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import { DATABASE_URL } from "../utils/env.js";
+import { prisma } from "./prisma.js";
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: DATABASE_URL }),
-});
+
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -14,4 +13,5 @@ export const auth = betterAuth({
   }),
   baseURL: "http://localhost:8800/",
   emailAndPassword: { enabled: true, autoSignIn: false },
+  trustedOrigins: ["http://localhost:5173"],
 });
