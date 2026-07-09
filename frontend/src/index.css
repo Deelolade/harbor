@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* ── Sonner dark toast overrides ── */
+[data-sonner-toaster] {
+    font-family: inherit !important;
+}
+
+[data-sonner-toast] {
+    background: #0d0d0d !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+    font-size: 14px !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+    border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+    border-color: rgba(34, 197, 94, 0.25) !important;
+}

@@ -2,17 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { authClient } from "../lib/auth-client";
 
-function handleResult<T extends { error?: { message?: string } }>(
-  result: T,
-  successMsg: string,
-  fallbackError: string,
-) {
-  if (result?.error) {
-    toast.error(result.error.message || fallbackError, { id: "auth-error" });
-    return false;
-  }
-  toast.success(successMsg, { id: "auth-success" });
-  return true;
+/** Extract a human-readable message from better-auth's various error shapes. */
+function getErrorMessage(error: any, fallback: string): string {
+  if (!error) return fallback;
+  if (typeof error === "string") return error;
+  // better-auth often wraps errors: { error: { message } } or { body: { message } }
+  const inner = error?.error || error?.body || error;
+  return inner?.message || error?.message || fallback;
 }
 
 // ── Sign In ──
@@ -21,19 +17,18 @@ export function useSignIn() {
     mutationFn: (data: { email: string; password: string }) =>
       authClient.signIn.email(data),
     onError: (error: any) => {
-      toast.error(
-        error?.message || "Sign in failed. Please check your credentials.",
-        {
-          id: "auth-error",
-        },
-      );
+      toast.error(getErrorMessage(error, "Sign in failed."), {
+        id: "auth-error",
+      });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Signed in successfully!",
-        "Sign in failed. Please check your credentials.",
-      );
+      if (result?.error) {
+        toast.error(getErrorMessage(result.error, "Sign in failed."), {
+          id: "auth-error",
+        });
+        return;
+      }
+      toast.success("Signed in successfully!", { id: "auth-success" });
     },
   });
 }
@@ -44,16 +39,18 @@ export function useSignUp() {
     mutationFn: (data: { name: string; email: string; password: string }) =>
       authClient.signUp.email(data),
     onError: (error: any) => {
-      toast.error(error?.message || "Sign up failed. Please try again.", {
+      toast.error(getErrorMessage(error, "Sign up failed."), {
         id: "auth-error",
       });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Account created! You're all set.",
-        "Sign up failed. Please try again.",
-      );
+      if (result?.error) {
+        toast.error(getErrorMessage(result.error, "Sign up failed."), {
+          id: "auth-error",
+        });
+        return;
+      }
+      toast.success("Account created!", { id: "auth-success" });
     },
   });
 }
@@ -63,16 +60,20 @@ export function useForgotPassword() {
   return useMutation({
     mutationFn: (data: { email: string }) => authClient.forgetPassword(data),
     onError: (error: any) => {
-      toast.error(error?.message || "Something went wrong. Please try again.", {
+      toast.error(getErrorMessage(error, "Something went wrong."), {
         id: "auth-error",
       });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Reset link sent! Check your inbox.",
-        "Something went wrong. Please try again.",
-      );
+      if (result?.error) {
+        toast.error(getErrorMessage(result.error, "Something went wrong."), {
+          id: "auth-error",
+        });
+        return;
+      }
+      toast.success("Reset link sent! Check your inbox.", {
+        id: "auth-success",
+      });
     },
   });
 }
@@ -83,19 +84,18 @@ export function useResetPassword() {
     mutationFn: (data: { newPassword: string; token?: string }) =>
       authClient.resetPassword(data),
     onError: (error: any) => {
-      toast.error(
-        error?.message || "Reset failed. The link may have expired.",
-        {
-          id: "auth-error",
-        },
-      );
+      toast.error(getErrorMessage(error, "Reset failed."), {
+        id: "auth-error",
+      });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Password reset successfully!",
-        "Reset failed. The link may have expired.",
-      );
+      if (result?.error) {
+        toast.error(getErrorMessage(result.error, "Reset failed."), {
+          id: "auth-error",
+        });
+        return;
+      }
+      toast.success("Password reset successfully!", { id: "auth-success" });
     },
   });
 }
@@ -105,19 +105,18 @@ export function useVerifyEmail() {
   return useMutation({
     mutationFn: (data: { token: string }) => authClient.verifyEmail(data),
     onError: (error: any) => {
-      toast.error(
-        error?.message || "Verification failed. The link may have expired.",
-        {
-          id: "auth-error",
-        },
-      );
+      toast.error(getErrorMessage(error, "Verification failed."), {
+        id: "auth-error",
+      });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Email verified! You can now sign in.",
-        "Verification failed. The link may have expired.",
-      );
+      if (result?.error) {
+        toast.error(getErrorMessage(result.error, "Verification failed."), {
+          id: "auth-error",
+        });
+        return;
+      }
+      toast.success("Email verified!", { id: "auth-success" });
     },
   });
 }
@@ -140,16 +139,19 @@ export function useAcceptInvite() {
         },
       } as any),
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to accept invitation.", {
+      toast.error(getErrorMessage(error, "Failed to accept invitation."), {
         id: "auth-error",
       });
     },
     onSuccess: (result: any) => {
-      handleResult(
-        result,
-        "Invitation accepted! Welcome aboard.",
-        "Failed to accept invitation.",
-      );
+      if (result?.error) {
+        toast.error(
+          getErrorMessage(result.error, "Failed to accept invitation."),
+          { id: "auth-error" },
+        );
+        return;
+      }
+      toast.success("Invitation accepted!", { id: "auth-success" });
     },
   });
 }
