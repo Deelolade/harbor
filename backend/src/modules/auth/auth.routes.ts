@@ -2,20 +2,58 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { auth } from "../../lib/auth.js";
 import { prisma } from "../../lib/prisma.js";
 import { fromNodeHeaders } from "better-auth/node";
+import { sendVerificationEmail } from "../../utils/email.js";
+import crypto from "node:crypto";
+
+function generateToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 export const authRoutes = async (
   request: FastifyRequest,
   reply: FastifyReply,
 ) => {
   try {
+    // ── Normalize email to lowercase for all requests ──
+    const body = request.body as Record<string, unknown> | undefined;
+    if (body?.email && typeof body.email === "string") {
+      body.email = body.email.toLowerCase().trim();
+    }
+
     // ── Pre-check: duplicate email on sign-up ──
     if (request.method === "POST" && request.url.includes("/sign-up/email")) {
-      const body = request.body as { email?: string } | undefined;
-      if (body?.email) {
-        const existing = await prisma.user.findUnique({
-          where: { email: body.email },
+      const email = body?.email as string | undefined;
+      if (email) {
+        const existing = await prisma.user.findFirst({
+          where: { email },
         });
         if (existing) {
+          // If the account is unverified, resend the verification email
+          if (!existing.emailVerified) {
+            const token = generateToken();
+            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+            await prisma.verification.create({
+              data: {
+                id: crypto.randomUUID(),
+                identifier: email,
+                value: token,
+                expiresAt,
+              },
+            });
+
+            const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+            sendVerificationEmail(email, verifyUrl).catch((err) =>
+              request.log.error(err, "Failed to resend verification email"),
+            );
+
+            return reply.status(200).send({
+              message:
+                "This account already exists but is not verified. We've sent a new verification link to your email.",
+              code: "RESENT_VERIFICATION",
+            });
+          }
+
           reply.status(400);
           return reply.send({
             message: "An account with this email already exists.",
@@ -25,6 +63,70 @@ export const authRoutes = async (
       }
     }
 
+    // ── Resend verification manually ──
+    if (
+      request.method === "POST" &&
+      request.url.includes("/resend-verification")
+    ) {
+      const email = body?.email as string | undefined;
+      if (!email) {
+        return reply.status(400).send({ message: "Email is required." });
+      }
+
+      const user = await prisma.user.findFirst({ where: { email } });
+      if (!user || user.emailVerified) {
+        // Don't reveal whether the email exists — always return success
+        return reply.status(200).send({});
+      }
+
+      const token = generateToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await prisma.verification.create({
+        data: {
+          id: crypto.randomUUID(),
+          identifier: email,
+          value: token,
+          expiresAt,
+        },
+      });
+
+      const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+      sendVerificationEmail(email, verifyUrl).catch((err) =>
+        request.log.error(err, "Failed to send verification email"),
+      );
+
+      return reply.status(200).send({});
+    }
+
+    // ── Verify email manually ──
+    if (request.method === "POST" && request.url.includes("/verify-email")) {
+      const { token } = (body || {}) as { token?: string };
+      if (!token) {
+        return reply.status(400).send({ message: "Token is required." });
+      }
+
+      const record = await prisma.verification.findFirst({
+        where: { value: token, expiresAt: { gt: new Date() } },
+      });
+
+      if (!record) {
+        return reply
+          .status(400)
+          .send({ message: "Invalid or expired verification token." });
+      }
+
+      await prisma.user.updateMany({
+        where: { email: record.identifier },
+        data: { emailVerified: true },
+      });
+
+      await prisma.verification.delete({ where: { id: record.id } });
+
+      return reply.status(200).send({});
+    }
+
+    // ── Forward to better-auth ──
     const url = new URL(request.url, `http://${request.headers.host}`);
 
     const req = new Request(url.toString(), {
@@ -38,6 +140,33 @@ export const authRoutes = async (
     reply.status(response.status);
     response.headers.forEach((value, key) => reply.header(key, value));
 
+    // ── After successful sign-up, send verification email ──
+    if (
+      request.method === "POST" &&
+      request.url.includes("/sign-up/email") &&
+      response.status === 200
+    ) {
+      const email = body?.email as string | undefined;
+      if (email) {
+        const token = generateToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await prisma.verification.create({
+          data: {
+            id: crypto.randomUUID(),
+            identifier: email,
+            value: token,
+            expiresAt,
+          },
+        });
+
+        const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+        sendVerificationEmail(email, verifyUrl).catch((err) =>
+          request.log.error(err, "Failed to send verification email"),
+        );
+      }
+    }
+
     if (response.body) {
       const body = await response.text();
       return reply.send(body);
@@ -45,12 +174,6 @@ export const authRoutes = async (
     return reply.send(null);
   } catch (error: any) {
     request.log.error(error, "Auth route error");
-
-    if (error?.body || error?.status) {
-      reply.status(error.status || 500);
-      return reply.send(error.body || { error: "Authentication error" });
-    }
-
     return reply.status(500).send({
       error: "Internal authentication error",
       code: "AUTH_FAILURE",

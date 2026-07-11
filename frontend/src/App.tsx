@@ -4,6 +4,7 @@ import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import VerifyEmail from "./pages/auth/VerifyEmail";
+import ResendVerification from "./pages/auth/ResendVerification";
 import InviteAcceptance from "./pages/auth/InviteAcceptance";
 
 function Home() {
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/invite" element={<InviteAcceptance />} />
+      <Route path="/resend-verification" element={<ResendVerification />} />
     </Routes>
   );
 }

@@ -103,19 +103,23 @@ export function useResetPassword() {
 // ── Verify Email ──
 export function useVerifyEmail() {
   return useMutation({
-    mutationFn: (data: { token: string }) => authClient.verifyEmail(data),
+    mutationFn: async (data: { token: string }) => {
+      const res = await fetch("http://localhost:8800/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Verification failed.");
+      return json;
+    },
     onError: (error: any) => {
-      toast.error(getErrorMessage(error, "Verification failed."), {
+      toast.error(error?.message || "Verification failed.", {
         id: "auth-error",
       });
     },
-    onSuccess: (result: any) => {
-      if (result?.error) {
-        toast.error(getErrorMessage(result.error, "Verification failed."), {
-          id: "auth-error",
-        });
-        return;
-      }
+    onSuccess: () => {
       toast.success("Email verified!", { id: "auth-success" });
     },
   });

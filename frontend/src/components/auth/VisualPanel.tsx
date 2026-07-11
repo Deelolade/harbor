@@ -19,7 +19,11 @@ interface VisualConfig {
 const visualContent: Record<Mode, VisualConfig> = {
   signup: {
     command: "flux init workspace",
-    checks: ["✓ syncing calendars", "✓ inviting teammates", "✓ workspace ready"],
+    checks: [
+      "✓ syncing calendars",
+      "✓ inviting teammates",
+      "✓ workspace ready",
+    ],
     statusBefore: "workspace status: provisioning",
     statusAfter: "workspace status: online",
     items: [
@@ -29,11 +33,15 @@ const visualContent: Record<Mode, VisualConfig> = {
       { label: "Client sync at 3pm", tag: "client" },
     ],
     caption:
-      '4 teammates already added to <strong style="color:#A1A1AA;">Acme Product</strong> workspace.',
+      '4 teammates already added to <strong style="color:#A1A1AA;">Atlas Product</strong> workspace.',
   },
   signin: {
     command: "flux resume session",
-    checks: ["✓ verifying credentials", "✓ restoring workspace", "✓ session active"],
+    checks: [
+      "✓ verifying credentials",
+      "✓ restoring workspace",
+      "✓ session active",
+    ],
     statusBefore: "session status: authenticating",
     statusAfter: "session status: active",
     items: [
@@ -123,7 +131,7 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
           timeout = setTimeout(loop, 2200);
           return;
         }
-        setDoneTasks(prev => new Set(prev).add(i));
+        setDoneTasks((prev) => new Set(prev).add(i));
         i++;
         timeout = setTimeout(step, 550);
       };
@@ -148,7 +156,9 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          <span className="text-[13px] font-medium text-zinc-400">{statusText}</span>
+          <span className="text-[13px] font-medium text-zinc-400">
+            {statusText}
+          </span>
         </div>
 
         {/* Terminal */}
@@ -186,12 +196,23 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
                 }`}
               >
                 {doneTasks.has(i) && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#34D399"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
               </div>
-              <span className="flex-1 text-[14px] text-zinc-300">{item.label}</span>
+              <span className="flex-1 text-[14px] text-zinc-300">
+                {item.label}
+              </span>
               <span className="rounded-md border border-white/[0.05] bg-white/[0.03] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
                 {item.tag}
               </span>
