@@ -140,8 +140,16 @@ export const authRoutes = async (
 
     const response = await auth.handler(req);
 
+    // OAuth redirects need reply.redirect() to work in popups
+    const location = response.headers.get("location");
+    if (location && response.status >= 300 && response.status < 400) {
+      return reply.redirect(location, response.status);
+    }
+
     reply.status(response.status);
-    response.headers.forEach((value, key) => reply.header(key, value));
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== "location") reply.header(key, value);
+    });
 
     // ── After successful sign-up, send verification email ──
     if (

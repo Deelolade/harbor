@@ -7,6 +7,8 @@ import {
   GOOGLE_CLIENT_SECRET,
   FRONTEND_URL,
   BACKEND_URL,
+  GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET,
 } from "../utils/env.js";
 
 export const auth = betterAuth({
@@ -32,6 +34,11 @@ export const auth = betterAuth({
       prompt: "select_account",
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      prompt: "select_account",
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
     },
   },
 });
