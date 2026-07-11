@@ -6,7 +6,7 @@
 }
 
 [data-sonner-toast] {
-    background: #0d0d0d !important;
+    background: #111318 !important;
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     color: #fff !important;
     font-size: 14px !important;
@@ -17,5 +17,5 @@
 }
 
 [data-sonner-toast][data-type="success"] {
-    border-color: rgba(34, 197, 94, 0.25) !important;
+    border-color: rgba(234, 179, 8, 0.3) !important;
 }

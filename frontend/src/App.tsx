@@ -11,7 +11,7 @@ import Workspace from "./pages/Workspace";
 
 function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
+    <div className="flex min-h-screen items-center justify-center bg-[#0D0E12] text-white">
       <h1 className="text-2xl font-bold">Landing Page</h1>
     </div>
   );

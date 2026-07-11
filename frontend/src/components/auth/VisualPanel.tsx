@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Mode = "signup" | "signin";
 
@@ -7,16 +7,17 @@ interface Task {
   tag: string;
 }
 
-interface VisualConfig {
-  command: string;
-  checks: string[];
-  statusBefore: string;
-  statusAfter: string;
-  items: Task[];
-  caption: string;
-}
-
-const visualContent: Record<Mode, VisualConfig> = {
+const visualContent: Record<
+  Mode,
+  {
+    command: string;
+    checks: string[];
+    statusBefore: string;
+    statusAfter: string;
+    items: Task[];
+    caption: string;
+  }
+> = {
   signup: {
     command: "flux init workspace",
     checks: [
@@ -61,7 +62,7 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
   const [typedText, setTypedText] = useState("");
   const [showChecks, setShowChecks] = useState<string[]>([]);
   const [statusText, setStatusText] = useState(cfg.statusBefore);
-  const [tasks, setTasks] = useState<Task[]>(cfg.items);
+  const [tasks] = useState<Task[]>(cfg.items);
   const [doneTasks, setDoneTasks] = useState<Set<number>>(new Set());
   const reduceMotion = useRef(
     typeof window !== "undefined"
@@ -69,21 +70,18 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
       : false,
   );
 
-  // ── Type the command ──
   useEffect(() => {
     sessionRef.current++;
     const mySession = sessionRef.current;
     setTypedText("");
     setShowChecks([]);
     setStatusText(cfg.statusBefore);
-    setTasks(cfg.items);
     setDoneTasks(new Set());
 
     if (reduceMotion.current) {
       setTypedText(cfg.command);
       return;
     }
-
     let i = 0;
     const iv = setInterval(() => {
       if (sessionRef.current !== mySession) return clearInterval(iv);
@@ -91,12 +89,9 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
       i++;
       if (i >= cfg.command.length) clearInterval(iv);
     }, 38);
-
     return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
-  // ── Show checks after typing completes ──
   useEffect(() => {
     if (typedText !== cfg.command) return;
     const mySession = sessionRef.current;
@@ -113,14 +108,11 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
     };
     const t = setTimeout(step, reduceMotion.current ? 0 : 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typedText, cfg.command]);
+  }, [typedText]);
 
-  // ── Animate task checkmarks in a loop ──
   useEffect(() => {
     const mySession = sessionRef.current;
     let timeout: ReturnType<typeof setTimeout>;
-
     const loop = () => {
       if (sessionRef.current !== mySession) return;
       setDoneTasks(new Set());
@@ -137,17 +129,15 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
       };
       timeout = setTimeout(step, reduceMotion.current ? 0 : 800);
     };
-
     timeout = setTimeout(loop, reduceMotion.current ? 0 : 2000);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, mode]);
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center px-12">
       {/* Ambient glows */}
-      <div className="absolute top-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-[#3B82F6]/[0.03] blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-[#8B5CF6]/[0.02] blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 h-[400px] w-[400px] rounded-full bg-amber-500/[0.03] blur-3xl" />
+      <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-amber-500/[0.02] blur-3xl" />
 
       <div className="relative z-10 w-full max-w-md space-y-6">
         {/* Status pill */}
@@ -174,7 +164,6 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
             <div
               key={i}
               className="font-mono text-[14px] text-emerald-400 transition-opacity duration-300"
-              style={{ opacity: 1 }}
             >
               {line}
             </div>
@@ -191,7 +180,7 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
               <div
                 className={`flex h-4 w-4 items-center justify-center rounded border transition-all duration-300 ${
                   doneTasks.has(i)
-                    ? "border-emerald-500 bg-emerald-500/20"
+                    ? "border-amber-500 bg-amber-500/20"
                     : "border-zinc-700"
                 }`}
               >
@@ -201,7 +190,7 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
                     height="10"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#34D399"
+                    stroke="#EAB308"
                     strokeWidth="3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -220,7 +209,6 @@ export default function VisualPanel({ mode }: { mode: Mode }) {
           ))}
         </div>
 
-        {/* Caption */}
         <p
           className="text-[13px] text-zinc-500"
           dangerouslySetInnerHTML={{ __html: cfg.caption }}

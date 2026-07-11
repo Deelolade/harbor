@@ -20,10 +20,10 @@ export default function AuthLayout({
   children,
 }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-[#050505]">
+    <div className="flex min-h-screen bg-[#0D0E12]">
       {/* ── Left: Glass Card ── */}
       <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
-        <div className="w-full max-w-[480px] rounded-3xl border border-white/[0.06] bg-[#0D0D0D] p-10 shadow-2xl shadow-black/80 backdrop-blur-xl">
+        <div className="w-full max-w-[480px] rounded-3xl border border-white/[0.06] bg-[#111318] p-10 shadow-2xl shadow-black/80 backdrop-blur-xl">
           {/* Logo */}
           <div className="mb-10 flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
@@ -51,7 +51,7 @@ export default function AuthLayout({
       </div>
 
       {/* ── Right: Interactive Visual ── */}
-      <div className="relative hidden w-1/2 overflow-hidden bg-[#080808] lg:block">
+      <div className="relative hidden w-1/2 overflow-hidden bg-[#111318] lg:block">
         <VisualPanel mode={mode} />
       </div>
     </div>

@@ -78,7 +78,7 @@ const buttonWrapper: React.CSSProperties = {
 };
 
 const button: React.CSSProperties = {
-  backgroundColor: "#2563EB",
+  backgroundColor: "#EAB308",
   color: "#fff",
   padding: "14px 32px",
   borderRadius: "12px",

@@ -19,9 +19,9 @@ export default function Button({
 
   const variants: Record<string, string> = {
     primary:
-      "h-[52px] rounded-xl bg-[#2563EB] text-white hover:bg-[#3B82F6] active:bg-[#1D4ED8] px-6",
+      "h-[52px] rounded-xl bg-amber-500 text-black hover:bg-amber-400 active:bg-amber-600 px-6",
     secondary:
-      "h-[52px] rounded-xl border border-[#1F1F23] bg-[#0A0A0A] text-white hover:bg-[#111] px-6",
+      "h-[52px] rounded-xl border border-[#1F1F23] bg-[#0D0E12] text-white hover:bg-[#111318] px-6",
     ghost: "text-zinc-400 hover:text-white px-2 py-1",
     pill: "h-12 rounded-full border border-white/[0.08] bg-transparent text-white hover:bg-white/[0.04] hover:border-white/[0.14] px-5",
   };

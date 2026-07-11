@@ -34,10 +34,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={resolvedType}
             className={cn(
-              "h-[52px] w-full rounded-xl bg-[#0A0A0A] px-3.5 text-[15px] text-white transition-all",
+              "h-[52px] w-full rounded-xl bg-[#0D0E12] px-3.5 text-[15px] text-white transition-all",
               "placeholder:text-zinc-600",
               "border border-[#1F1F23]",
-              "focus:border-[#3B82F6]/30 focus:outline-none focus:ring-1 focus:ring-[#3B82F6]/15",
+              "focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15",
               "disabled:cursor-not-allowed disabled:opacity-40",
               icon && "pl-10",
               isPassword && "pr-11",

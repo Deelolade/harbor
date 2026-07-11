@@ -82,7 +82,7 @@ export default function SignIn() {
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="h-4 w-4 rounded border-[#1F1F23] bg-[#0A0A0A] accent-[#2563EB]"
+              className="h-4 w-4 rounded border-[#1F1F23] bg-[#0D0E12] accent-amber-500"
             />
             <span className="text-[13px] text-zinc-400">Remember me</span>
           </label>

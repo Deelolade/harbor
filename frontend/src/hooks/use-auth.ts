@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authClient } from "../lib/auth-client";
+import { authClient, refreshSession } from "../lib/auth-client";
 
 /** Extract a human-readable message from better-auth's various error shapes. */
 function getErrorMessage(error: any, fallback: string): string {
@@ -31,6 +31,7 @@ export function useSignIn() {
         return;
       }
       toast.success("Signed in!", { id: "auth-success" });
+      await refreshSession();
       navigate("/workspace");
     },
   });
