@@ -1,31 +1,25 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
-import { COOKIE_SECRET } from "./utils/env.js";
+import { COOKIE_SECRET, FRONTEND_URL } from "./utils/env.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 
-const fastify = Fastify({
-  logger: true,
-});
+const fastify = Fastify({ logger: true });
 const port = 8800;
 
-fastify.get("/", async (request, reply) => {
+fastify.get("/", async (_request, reply) => {
   reply.send("Hello new fastify project sample");
 });
 
-// cookie setup
-await fastify.register(cookie, {
-  secret: COOKIE_SECRET,
-});
-// cors setup
+await fastify.register(cookie, { secret: COOKIE_SECRET });
+
 await fastify.register(cors, {
-  origin: ["http://localhost:5173"],
+  origin: [FRONTEND_URL],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
 });
 
-// route setups
 fastify.route({
   method: ["GET", "POST"],
   url: "/api/auth/*",

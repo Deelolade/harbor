@@ -8,6 +8,7 @@ import SocialButton from "../../components/auth/SocialButton";
 import { signUpSchema, type SignUpInput } from "../../lib/validations";
 import { useSignUp } from "../../hooks/use-auth";
 import { authClient } from "../../lib/auth-client";
+import { FRONTEND_URL } from "../../lib/auth-client";
 
 export default function SignUp() {
   const [form, setForm] = useState<SignUpInput>({
@@ -43,8 +44,16 @@ export default function SignUp() {
     signUp.mutate(data);
   };
 
-  const handleSocial = async (provider: "google" | "github") => {
-    await authClient.signIn.social({ provider });
+  const handleSocial = async (
+    provider: "google" | "github",
+    e: React.MouseEvent,
+  ) => {
+    e.preventDefault();
+    await authClient.signIn.social({
+      provider,
+      callbackURL: `${FRONTEND_URL}/workspace`,
+      newUserCallbackURL: `${FRONTEND_URL}/workspace`,
+    });
   };
 
   return (
@@ -147,11 +156,11 @@ export default function SignUp() {
         <div className="grid grid-cols-2 gap-2.5">
           <SocialButton
             provider="google"
-            onClick={() => handleSocial("google")}
+            onClick={(e) => handleSocial("google", e)}
           />
           <SocialButton
             provider="github"
-            onClick={() => handleSocial("github")}
+            onClick={(e) => handleSocial("github", e)}
           />
         </div>
       </form>

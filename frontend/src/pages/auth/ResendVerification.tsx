@@ -5,6 +5,7 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { toast } from "sonner";
+import { FRONTEND_URL } from "../../lib/auth-client";
 
 export default function ResendVerification() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function ResendVerification() {
     setLoading(true);
     try {
       const res = await fetch(
-        "http://localhost:8800/api/auth/resend-verification",
+        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/resend-verification`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -28,7 +29,9 @@ export default function ResendVerification() {
       setLoading(false);
 
       if (res.ok) {
-        toast.success("If your account exists, we've sent a new verification link.");
+        toast.success(
+          "If your account exists, we've sent a new verification link.",
+        );
       } else {
         toast.error("Something went wrong. Please try again.");
       }
@@ -44,7 +47,10 @@ export default function ResendVerification() {
       title="Resend verification"
       subtitle="Enter your email and we'll send you a new verification link."
       footer={
-        <Link to="/sign-in" className="font-semibold text-white hover:underline">
+        <Link
+          to="/sign-in"
+          className="font-semibold text-white hover:underline"
+        >
           Back to sign in
         </Link>
       }

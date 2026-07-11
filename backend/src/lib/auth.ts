@@ -2,14 +2,17 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { prisma } from "./prisma.js";
 import { sendPasswordResetEmail } from "../utils/email.js";
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "../utils/env.js";
+import {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  FRONTEND_URL,
+  BACKEND_URL,
+} from "../utils/env.js";
 
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
-  baseURL: "http://localhost:8800/",
-  trustedOrigins: ["http://localhost:5173"],
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  baseURL: `${BACKEND_URL}/`,
+  trustedOrigins: [FRONTEND_URL],
 
   emailAndPassword: {
     enabled: true,
@@ -23,6 +26,7 @@ export const auth = betterAuth({
       }
     },
   },
+
   socialProviders: {
     google: {
       prompt: "select_account",

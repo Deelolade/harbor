@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authClient, refreshSession } from "../lib/auth-client";
+import { authClient, refreshSession, FRONTEND_URL } from "../lib/auth-client";
 
 /** Extract a human-readable message from better-auth's various error shapes. */
 function getErrorMessage(error: any, fallback: string): string {
@@ -23,7 +23,7 @@ export function useSignIn() {
         id: "auth-error",
       });
     },
-    onSuccess: (result: any) => {
+    onSuccess: async (result: any) => {
       if (result?.error) {
         toast.error(getErrorMessage(result.error, "Sign in failed."), {
           id: "auth-error",
@@ -116,12 +116,15 @@ export function useResetPassword() {
 export function useVerifyEmail() {
   return useMutation({
     mutationFn: async (data: { token: string }) => {
-      const res = await fetch("http://localhost:8800/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/verify-email`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          credentials: "include",
+        },
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Verification failed.");
       return json;

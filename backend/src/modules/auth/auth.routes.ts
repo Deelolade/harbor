@@ -3,7 +3,10 @@ import { auth } from "../../lib/auth.js";
 import { prisma } from "../../lib/prisma.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { sendVerificationEmail } from "../../utils/email.js";
+import { FRONTEND_URL } from "../../utils/env.js";
 import crypto from "node:crypto";
+
+const makeUrl = (path: string) => `${FRONTEND_URL}${path}`;
 
 function generateToken() {
   return crypto.randomBytes(32).toString("hex");
@@ -42,7 +45,7 @@ export const authRoutes = async (
               },
             });
 
-            const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+            const verifyUrl = makeUrl(`/verify-email?token=${token}`);
             sendVerificationEmail(email, verifyUrl).catch((err) =>
               request.log.error(err, "Failed to resend verification email"),
             );
@@ -91,7 +94,7 @@ export const authRoutes = async (
         },
       });
 
-      const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+      const verifyUrl = makeUrl(`/verify-email?token=${token}`);
       sendVerificationEmail(email, verifyUrl).catch((err) =>
         request.log.error(err, "Failed to send verification email"),
       );
@@ -160,7 +163,7 @@ export const authRoutes = async (
           },
         });
 
-        const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+        const verifyUrl = makeUrl(`/verify-email?token=${token}`);
         sendVerificationEmail(email, verifyUrl).catch((err) =>
           request.log.error(err, "Failed to send verification email"),
         );

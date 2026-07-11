@@ -49,6 +49,7 @@ export default function SocialButton({
 }: SocialButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "flex items-center justify-center gap-2 rounded-xl border border-[#2A2A2E] bg-transparent px-3 py-[11px] text-[13.5px] font-medium text-white transition-all hover:border-zinc-500 hover:bg-white/[0.02] active:scale-[0.98]",
