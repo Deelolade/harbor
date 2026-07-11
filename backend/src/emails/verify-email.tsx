@@ -18,12 +18,12 @@ export default function VerifyEmail({ url }: VerifyEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Verify your email address for Atlas</Preview>
+      <Preview>Verify your email address for Harbor</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Verify your email</Heading>
           <Text style={text}>
-            Thanks for signing up for Atlas. Click the button below to verify
+            Thanks for signing up for Harbor. Click the button below to verify
             your email address and get started.
           </Text>
           <Section style={buttonWrapper}>

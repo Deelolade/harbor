@@ -30,7 +30,7 @@ export default function AuthLayout({
               <FiLock size={15} className="text-white" />
             </div>
             <span className="text-[15px] font-semibold tracking-tight text-white">
-              Atlas
+              Harbor
             </span>
           </div>
 

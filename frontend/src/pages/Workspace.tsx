@@ -23,7 +23,7 @@ export default function Workspace() {
               />
             </svg>
           </div>
-          <span className="text-sm font-semibold tracking-tight">Atlas</span>
+          <span className="text-sm font-semibold tracking-tight">Harbor</span>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">

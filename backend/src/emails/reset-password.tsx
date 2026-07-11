@@ -18,7 +18,7 @@ export default function ResetPassword({ url }: ResetPasswordProps) {
   return (
     <Html>
       <Head />
-      <Preview>Reset your Atlas password</Preview>
+      <Preview>Reset your Harbor password</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Reset your password</Heading>

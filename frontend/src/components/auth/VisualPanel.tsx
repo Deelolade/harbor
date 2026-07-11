@@ -34,7 +34,7 @@ const visualContent: Record<
       { label: "Client sync at 3pm", tag: "client" },
     ],
     caption:
-      '4 teammates already added to <strong style="color:#A1A1AA;">Atlas Product</strong> workspace.',
+      '4 teammates already added to <strong style="color:#A1A1AA;">Harbor Product</strong> workspace.',
   },
   signin: {
     command: "flux resume session",

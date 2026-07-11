@@ -7,7 +7,7 @@ import ResetPassword from "../emails/reset-password.js";
 
 const sendbyte = new SendByte(SENDBYTE_SECRET);
 
-const FROM = process.env.EMAIL_FROM || "Atlas <noreply@deelolade.com.ng>";
+const FROM = process.env.EMAIL_FROM || "Harbor <noreply@deelolade.com.ng>";
 
 async function sendEmail(to: string, subject: string, html: string) {
   console.log(`[email] Sending "${subject}" to ${to}...`);
