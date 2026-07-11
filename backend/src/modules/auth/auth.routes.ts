@@ -164,6 +164,14 @@ export const authRoutes = async (
         sendVerificationEmail(email, verifyUrl).catch((err) =>
           request.log.error(err, "Failed to send verification email"),
         );
+
+        // Set default avatar from DiceBear
+        const seed = (body?.name as string) || email;
+        const avatarUrl = `https://api.dicebear.com/10.x/lorelei/svg?seed=${encodeURIComponent(seed)}`;
+        await prisma.user.update({
+          where: { email },
+          data: { image: avatarUrl },
+        });
       }
     }
 

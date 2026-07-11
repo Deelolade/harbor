@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { authClient } from "../lib/auth-client";
 
@@ -13,6 +14,7 @@ function getErrorMessage(error: any, fallback: string): string {
 
 // ── Sign In ──
 export function useSignIn() {
+  const navigate = useNavigate();
   return useMutation({
     mutationFn: (data: { email: string; password: string }) =>
       authClient.signIn.email(data),
@@ -28,13 +30,15 @@ export function useSignIn() {
         });
         return;
       }
-      toast.success("Signed in successfully!", { id: "auth-success" });
+      toast.success("Signed in!", { id: "auth-success" });
+      navigate("/workspace");
     },
   });
 }
 
 // ── Sign Up ──
 export function useSignUp() {
+  const navigate = useNavigate();
   return useMutation({
     mutationFn: (data: { name: string; email: string; password: string }) =>
       authClient.signUp.email(data),
@@ -50,7 +54,14 @@ export function useSignUp() {
         });
         return;
       }
-      toast.success("Account created!", { id: "auth-success" });
+      navigate("/sign-in");
+      toast.success(
+        "Account created! Check your email to verify your account.",
+        {
+          id: "auth-success",
+          duration: 6000,
+        },
+      );
     },
   });
 }
