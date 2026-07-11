@@ -32,7 +32,7 @@ export function useSignIn() {
       }
       toast.success("Signed in!", { id: "auth-success" });
       await refreshSession();
-      navigate("/workspace");
+      navigate("/workspaces");
     },
   });
 }

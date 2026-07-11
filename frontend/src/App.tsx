@@ -7,7 +7,12 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import InviteAcceptance from "./pages/auth/InviteAcceptance";
 import ResendVerification from "./pages/auth/ResendVerification";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Workspace from "./pages/Workspace";
+import WorkspaceLayout from "./pages/overview/WorkspaceLayout";
+import HomeView from "./pages/overview/HomeView";
+import SettingsView from "./pages/overview/SettingsView";
+import MembersView from "./pages/overview/MembersView";
+import PlaceholderView from "./pages/overview/PlaceholderView";
+import WorkspacesList from "./pages/workspaces/WorkspacesList";
 
 function Home() {
   return (
@@ -28,14 +33,40 @@ export default function App() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/invite" element={<InviteAcceptance />} />
       <Route path="/resend-verification" element={<ResendVerification />} />
+
+      {/* Workspaces list */}
       <Route
-        path="/workspace"
+        path="/workspaces"
         element={
           <ProtectedRoute>
-            <Workspace />
+            <WorkspacesList />
           </ProtectedRoute>
         }
       />
+
+      {/* Individual workspace */}
+      <Route
+        path="/workspace/:workspaceId"
+        element={
+          <ProtectedRoute>
+            <WorkspaceLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<HomeView />} />
+        <Route path="inbox" element={<PlaceholderView title="Inbox" />} />
+        <Route path="tasks" element={<PlaceholderView title="My tasks" />} />
+        <Route path="members" element={<MembersView />} />
+        <Route
+          path="clients"
+          element={<PlaceholderView title="Client views" />}
+        />
+        <Route path="settings" element={<SettingsView />} />
+        <Route
+          path="projects/:id"
+          element={<PlaceholderView title="Project" />}
+        />
+      </Route>
     </Routes>
   );
 }

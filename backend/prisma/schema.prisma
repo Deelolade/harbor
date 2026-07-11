@@ -18,13 +18,22 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  role          Role      @default(MEMBER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
 
   @@unique([email])
   @@map("user")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
 }
 
 model Session {
@@ -73,4 +82,33 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Workspace {
+  id          String            @id @default(cuid())
+  name        String
+  ownerId     String
+  owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members     WorkspaceMember[]
+  // projects    Project[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  @@unique([workspaceId, userId])
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
 }

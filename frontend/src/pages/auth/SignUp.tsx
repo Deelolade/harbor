@@ -51,8 +51,8 @@ export default function SignUp() {
     e.preventDefault();
     await authClient.signIn.social({
       provider,
-      callbackURL: `${FRONTEND_URL}/workspace`,
-      newUserCallbackURL: `${FRONTEND_URL}/workspace`,
+      callbackURL: `${FRONTEND_URL}/workspaces`,
+      newUserCallbackURL: `${FRONTEND_URL}/workspaces`,
     });
   };
 
