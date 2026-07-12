@@ -7,12 +7,10 @@ import {
   FiFolder,
   FiUsers,
   FiEye,
-  FiLayers,
-  FiTarget,
+  FiSettings,
   FiChevronLeft,
   FiChevronRight,
   FiLogOut,
-  FiSettings,
   FiChevronDown,
   FiGrid,
   FiPlus,
@@ -21,19 +19,11 @@ import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
-const projects = [
-  {
-    name: "Design System",
-    icon: <FiLayers size={14} />,
-    color: "text-violet-400",
-  },
-  {
-    name: "Marketing Site",
-    icon: <FiTarget size={14} />,
-    color: "text-amber-400",
-  },
-  { name: "Mobile App", icon: <FiEye size={14} />, color: "text-emerald-400" },
-];
+interface ProjectItem {
+  id: string;
+  name: string;
+  image?: string;
+}
 
 interface WorkspaceInfo {
   id: string;
@@ -64,6 +54,7 @@ export default function Sidebar({
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
 
   // Close switcher on outside click
@@ -87,6 +78,17 @@ export default function Sidebar({
       .then(setWorkspaces)
       .catch(() => {});
   }, []);
+
+  // Fetch projects for this workspace
+  useEffect(() => {
+    if (!workspaceId) return;
+    fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then(setProjects)
+      .catch(() => {});
+  }, [workspaceId]);
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -257,22 +259,16 @@ export default function Sidebar({
               <div className="ml-2 space-y-0.5 border-l border-white/[0.04] pl-3">
                 {projects.map((p) => (
                   <button
-                    key={p.name}
-                    onClick={() =>
-                      navigate(
-                        `${basePath}/projects/${p.name.toLowerCase().replace(/\s+/g, "-")}`,
-                      )
-                    }
+                    key={p.id}
+                    onClick={() => navigate(`${basePath}/projects/${p.id}`)}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                      location.pathname.includes(
-                        p.name.toLowerCase().replace(/\s+/g, "-"),
-                      )
+                      location.pathname.includes(`/projects/${p.id}`)
                         ? "text-white bg-white/[0.04]"
                         : "text-zinc-500 hover:bg-white/[0.04] hover:text-white"
                     }`}
                   >
-                    <span className={p.color}>{p.icon}</span>
-                    <span>{p.name}</span>
+                    <span>{p.image || "📁"}</span>
+                    <span className="truncate">{p.name}</span>
                   </button>
                 ))}
               </div>
