@@ -125,7 +125,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!canManage(member)) {
+      if (!isOwner(member)) {
         return reply.status(403).send({
           message: "Only admins and owners can update the workspace.",
         });
@@ -214,10 +214,10 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!canManage(member)) {
+      if (!isOwner(member)) {
         return reply
           .status(403)
-          .send({ message: "Only admins and owners can add members." });
+          .send({ message: "Only the owner can add members." });
       }
 
       const { userId, role } = request.body as AddMemberInput;
@@ -257,10 +257,10 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!canManage(member)) {
+      if (!isOwner(member)) {
         return reply
           .status(403)
-          .send({ message: "Only admins and owners can change member roles." });
+          .send({ message: "Only the owner can change member roles." });
       }
 
       const { role } = request.body as UpdateMemberInput;
@@ -318,10 +318,10 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
 
       // Only admins/owners can remove members, or a user can remove themselves
       const isSelfRemoval = targetMember.userId === user.id;
-      if (!isSelfRemoval && !canManage(member)) {
+      if (!isSelfRemoval && !isOwner(member)) {
         return reply
           .status(403)
-          .send({ message: "Only admins and owners can remove members." });
+          .send({ message: "Only the owner can remove members." });
       }
 
       // Cannot remove the owner
@@ -346,7 +346,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const member = await requireMembership(id, user.id);
       if (!member) return reply.status(403).send({ message: "Not a member" });
-      if (!canManage(member))
+      if (!isOwner(member))
         return reply
           .status(403)
           .send({ message: "Only admins and owners can invite." });
