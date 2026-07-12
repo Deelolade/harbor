@@ -4,7 +4,6 @@ import { prisma } from "../../lib/prisma.js";
 import { fromNodeHeaders } from "better-auth/node";
 import { sendVerificationEmail } from "../../utils/email.js";
 import { FRONTEND_URL } from "../../utils/env.js";
-import { invitationService } from "../workspace/invitation.service.js";
 import crypto from "node:crypto";
 
 const makeUrl = (path: string) => `${FRONTEND_URL}${path}`;
@@ -207,23 +206,9 @@ export const authRoutes = async (
         });
 
         // ── Handle invite-based signup vs self-service signup ──
-        const inviteParam = new URL(
-          request.url,
-          `http://${request.headers.host}`,
-        ).searchParams.get("invite");
-
-        if (inviteParam) {
-          // Invite-based signup: add user to the inviting workspace
-          await invitationService
-            .processForNewUser(inviteParam, user.id)
-            .catch((err) =>
-              request.log.error(err, "Failed to process invitation on signup"),
-            );
-        } else {
-          // Self-service signup: auto-create personal workspace
-          const displayName = (body?.name as string) || email.split("@")[0];
-          await createPersonalWorkspace(user.id, displayName);
-        }
+        // Self-service signup: auto-create personal workspace
+        const displayName = (body?.name as string) || email.split("@")[0];
+        await createPersonalWorkspace(user.id, displayName);
       }
     }
 

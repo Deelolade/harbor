@@ -240,27 +240,27 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
 
   // ── Update member role ──
   fastify.put(
-    "/api/workspaces/:id/members/:memberId",
+    "/api/workspaces/:id/members/:userId",
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = await getSessionUser(request);
       if (!user) {
         return reply.status(401).send({ message: "Unauthorized" });
       }
 
-      const { id, memberId } = request.params as {
+      const { id, userId: targetUserId } = request.params as {
         id: string;
-        memberId: string;
+        userId: string;
       };
-      const member = await requireMembership(id, user.id);
-      if (!member) {
+      const currentMember = await requireMembership(id, user.id);
+      if (!currentMember) {
         return reply
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!isOwner(member)) {
+      if (!canManage(currentMember)) {
         return reply
           .status(403)
-          .send({ message: "Only the owner can change member roles." });
+          .send({ message: "Only admins and owners can change member roles." });
       }
 
       const { role } = request.body as UpdateMemberInput;
@@ -270,46 +270,56 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const targetMember = await workspaceService.getMember(id, memberId);
+      const targetMember = await workspaceService.getMember(id, targetUserId);
       if (!targetMember) {
         return reply
           .status(404)
           .send({ message: "Member not found in this workspace." });
       }
 
-      // Only owner can assign the OWNER role
-      if (role === "OWNER" && !isOwner(member)) {
+      if (
+        (role === "ADMIN" || targetMember.role === "ADMIN") &&
+        !isOwner(currentMember)
+      ) {
+        return reply
+          .status(403)
+          .send({ message: "Only the owner can manage admin roles." });
+      }
+
+      if (role === "OWNER" && !isOwner(currentMember)) {
         return reply
           .status(403)
           .send({ message: "Only the owner can transfer ownership." });
       }
 
-      const updated = await workspaceService.updateMember(memberId, { role });
+      const updated = await workspaceService.updateMember(targetMember.id, {
+        role,
+      });
       return reply.send(updated);
     },
   );
 
   // ── Remove member ──
   fastify.delete(
-    "/api/workspaces/:id/members/:memberId",
+    "/api/workspaces/:id/members/:userId",
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = await getSessionUser(request);
       if (!user) {
         return reply.status(401).send({ message: "Unauthorized" });
       }
 
-      const { id, memberId } = request.params as {
+      const { id, userId: targetUserId } = request.params as {
         id: string;
-        memberId: string;
+        userId: string;
       };
-      const member = await requireMembership(id, user.id);
-      if (!member) {
+      const currentMember = await requireMembership(id, user.id);
+      if (!currentMember) {
         return reply
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
 
-      const targetMember = await workspaceService.getMember(id, memberId);
+      const targetMember = await workspaceService.getMember(id, targetUserId);
       if (!targetMember) {
         return reply
           .status(404)
@@ -318,10 +328,10 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
 
       // Only admins/owners can remove members, or a user can remove themselves
       const isSelfRemoval = targetMember.userId === user.id;
-      if (!isSelfRemoval && !isOwner(member)) {
+      if (!isSelfRemoval && !canManage(currentMember)) {
         return reply
           .status(403)
-          .send({ message: "Only the owner can remove members." });
+          .send({ message: "Only admins and owners can remove members." });
       }
 
       // Cannot remove the owner
@@ -331,7 +341,14 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .send({ message: "Cannot remove the workspace owner." });
       }
 
-      await workspaceService.removeMember(memberId);
+      // Only owner can remove an admin
+      if (targetMember.role === "ADMIN" && !isOwner(currentMember)) {
+        return reply
+          .status(403)
+          .send({ message: "Only the owner can remove an admin." });
+      }
+
+      await workspaceService.removeMember(targetMember.id);
       return reply.status(204).send();
     },
   );

@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { FiPlus, FiX } from "react-icons/fi";
+import {
+  FiPlus,
+  FiX,
+  FiTrash2,
+  FiShield,
+  FiUser,
+  FiChevronDown,
+} from "react-icons/fi";
 import { toast } from "sonner";
+import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -13,22 +21,35 @@ interface Member {
   user: { id: string; name: string; email: string; image?: string };
 }
 
+const roleColors: Record<string, string> = {
+  OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+};
+
 export default function MembersView() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { data: session } = authClient.useSession();
+
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const currentUserId = session?.user?.id;
+  const currentMember = members.find((m) => m.userId === currentUserId);
+  const canManage =
+    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+  const isOwner = currentMember?.role === "OWNER";
 
   const fetchMembers = async () => {
     setLoading(true);
     try {
       const res = await fetch(
         `${API_URL}/api/workspaces/${workspaceId}/members`,
-        {
-          credentials: "include",
-        },
+        { credentials: "include" },
       );
       if (res.ok) setMembers(await res.json());
     } catch {
@@ -42,12 +63,20 @@ export default function MembersView() {
     fetchMembers();
   }, [workspaceId]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!openMenu) return;
+    const close = () => setOpenMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [openMenu]);
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
       const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/invites`,
+        `${API_URL}/api/workspaces/${workspaceId}/invitations`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,10 +98,51 @@ export default function MembersView() {
     }
   };
 
-  const roleColors: Record<string, string> = {
-    OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  const handleRemove = async (member: Member) => {
+    if (!confirm(`Remove ${member.user.name} from this workspace?`)) return;
+    try {
+      const res = await fetch(
+        `${API_URL}/api/workspaces/${workspaceId}/members/${member.userId}`,
+        { method: "DELETE", credentials: "include" },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message);
+      }
+      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+      toast.success(`${member.user.name} removed.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to remove member.");
+    }
+  };
+
+  const handleRoleChange = async (member: Member, newRole: string) => {
+    setOpenMenu(null);
+    if (newRole === member.role) return;
+    try {
+      const res = await fetch(
+        `${API_URL}/api/workspaces/${workspaceId}/members/${member.userId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: newRole }),
+          credentials: "include",
+        },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message);
+      }
+      const updated = await res.json();
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.id === member.id ? { ...m, role: updated.role } : m,
+        ),
+      );
+      toast.success(`${member.user.name} is now ${newRole.toLowerCase()}.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update role.");
+    }
   };
 
   return (
@@ -84,13 +154,15 @@ export default function MembersView() {
             {members.length} member{members.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-        >
-          <FiPlus size={15} />
-          Invite member
-        </button>
+        {canManage && (
+          <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+          >
+            <FiPlus size={15} />
+            Invite member
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -103,31 +175,93 @@ export default function MembersView() {
         </p>
       ) : (
         <div className="space-y-2 max-w-xl">
-          {members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-[#111318] px-4 py-3"
-            >
-              <img
-                src={m.user.image || ""}
-                alt=""
-                className="h-9 w-9 rounded-full bg-white/[0.06]"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-sm font-medium text-white">
-                  {m.user.name}
-                </p>
-                <p className="truncate text-xs text-zinc-500">{m.user.email}</p>
-              </div>
-              <span
-                className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
-                  roleColors[m.role] || roleColors.MEMBER
-                }`}
+          {members.map((m) => {
+            const isSelf = m.userId === currentUserId;
+            const isTargetOwner = m.role === "OWNER";
+
+            return (
+              <div
+                key={m.id}
+                className="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-[#111318] px-4 py-3"
               >
-                {m.role}
-              </span>
-            </div>
-          ))}
+                <img
+                  src={m.user.image || ""}
+                  alt=""
+                  className="h-9 w-9 rounded-full bg-white/[0.06]"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-white">
+                      {m.user.name}
+                    </p>
+                    {isSelf && (
+                      <span className="text-[10px] text-zinc-600">(you)</span>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-zinc-500">
+                    {m.user.email}
+                  </p>
+                </div>
+
+                {/* Role badge */}
+                <span
+                  className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
+                    roleColors[m.role] || roleColors.MEMBER
+                  }`}
+                >
+                  {m.role}
+                </span>
+
+                {/* Actions — only for admins/owners on other members */}
+                {canManage && !isSelf && !isTargetOwner && (
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenu(openMenu === m.id ? null : m.id);
+                      }}
+                      className="rounded-md p-1 text-zinc-500 hover:bg-white/[0.06] hover:text-white transition-colors"
+                    >
+                      <FiChevronDown size={14} />
+                    </button>
+
+                    {openMenu === m.id && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/[0.06] bg-[#1A1D24] p-1 shadow-xl z-10"
+                      >
+                        {isOwner && m.role !== "ADMIN" && (
+                          <button
+                            onClick={() => handleRoleChange(m, "ADMIN")}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors"
+                          >
+                            <FiShield size={13} />
+                            Make admin
+                          </button>
+                        )}
+                        {m.role === "ADMIN" && (
+                          <button
+                            onClick={() => handleRoleChange(m, "MEMBER")}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors"
+                          >
+                            <FiUser size={13} />
+                            Demote to member
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRemove(m)}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <FiTrash2 size={13} />
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

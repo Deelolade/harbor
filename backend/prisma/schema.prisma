@@ -134,3 +134,13 @@ enum WorkspaceRole {
   ADMIN
   MEMBER
 }
+
+model Project{
+  id    String     @id @default(cuid())
+  name  String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+}
