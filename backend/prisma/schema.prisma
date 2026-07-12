@@ -25,6 +25,7 @@ model User {
   accounts      Account[]
   ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
   memberships     WorkspaceMember[]
+  sentInvitations Invitation[]     @relation("Inviter")
 
   @@unique([email])
   @@map("user")
@@ -90,6 +91,7 @@ model Workspace {
   ownerId     String
   owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   members     WorkspaceMember[]
+  invitations Invitation[]
   // projects    Project[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -105,6 +107,26 @@ model WorkspaceMember {
   joinedAt    DateTime      @default(now())
 
   @@unique([workspaceId, userId])
+}
+
+model Invitation {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviterId   String
+  inviter     User          @relation("Inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  email       String
+  role        WorkspaceRole @default(MEMBER)
+  token       String        @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([workspaceId])
+  @@index([token])
+  @@index([email])
+  @@map("invitation")
 }
 
 enum WorkspaceRole {

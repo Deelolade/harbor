@@ -4,6 +4,7 @@ import { SendByte } from "@sendbyte/node";
 import { SENDBYTE_SECRET } from "./env.js";
 import VerifyEmail from "../emails/verify-email.js";
 import ResetPassword from "../emails/reset-password.js";
+import InviteEmail from "../emails/invite-email.js";
 
 const sendbyte = new SendByte(SENDBYTE_SECRET);
 
@@ -39,4 +40,17 @@ export async function sendPasswordResetEmail(to: string, url: string) {
   console.log(`[email] Reset URL: ${url}`);
   const html = await render(createElement(ResetPassword, { url }));
   return sendEmail(to, "Reset your password", html);
+}
+
+export async function sendInviteEmail(
+  to: string,
+  inviterName: string,
+  workspaceName: string,
+  url: string,
+) {
+  console.log(`[email] Invite URL: ${url}`);
+  const html = await render(
+    createElement(InviteEmail, { inviterName, workspaceName, url }),
+  );
+  return sendEmail(to, `${inviterName} invited you to ${workspaceName}`, html);
 }

@@ -22,7 +22,7 @@ await fastify.register(cors, {
 });
 
 fastify.route({
-  method: ["GET", "POST"],
+  method: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   url: "/api/auth/*",
   handler: authRoutes,
 });

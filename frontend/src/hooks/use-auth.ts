@@ -1,13 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { authClient, refreshSession, FRONTEND_URL } from "../lib/auth-client";
+import { authClient } from "../lib/auth-client";
 
 /** Extract a human-readable message from better-auth's various error shapes. */
 function getErrorMessage(error: any, fallback: string): string {
   if (!error) return fallback;
   if (typeof error === "string") return error;
-  // better-auth often wraps errors: { error: { message } } or { body: { message } }
   const inner = error?.error || error?.body || error;
   return inner?.message || error?.message || fallback;
 }
@@ -15,6 +14,9 @@ function getErrorMessage(error: any, fallback: string): string {
 // ── Sign In ──
 export function useSignIn() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
   return useMutation({
     mutationFn: (data: { email: string; password: string }) =>
       authClient.signIn.email(data),
@@ -24,6 +26,7 @@ export function useSignIn() {
       });
     },
     onSuccess: async (result: any) => {
+      console.log("[useSignIn] result:", result);
       if (result?.error) {
         toast.error(getErrorMessage(result.error, "Sign in failed."), {
           id: "auth-error",
@@ -31,8 +34,9 @@ export function useSignIn() {
         return;
       }
       toast.success("Signed in!", { id: "auth-success" });
-      await refreshSession();
-      navigate("/workspaces");
+      // Invalidate all cached queries so useSession() picks up the new session
+      await queryClient.invalidateQueries();
+      navigate(redirect || "/workspaces");
     },
   });
 }
@@ -40,6 +44,8 @@ export function useSignIn() {
 // ── Sign Up ──
 export function useSignUp() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
   return useMutation({
     mutationFn: (data: { name: string; email: string; password: string }) =>
       authClient.signUp.email(data),
@@ -55,13 +61,14 @@ export function useSignUp() {
         });
         return;
       }
-      navigate("/sign-in");
+      if (redirect) {
+        navigate(redirect);
+      } else {
+        navigate("/sign-in");
+      }
       toast.success(
         "Account created! Check your email to verify your account.",
-        {
-          id: "auth-success",
-          duration: 6000,
-        },
+        { id: "auth-success", duration: 6000 },
       );
     },
   });

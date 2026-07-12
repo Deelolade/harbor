@@ -12,7 +12,6 @@ export const authClient = createAuthClient({
 });
 
 export async function refreshSession() {
-  await authClient.getSession({
-    query: { disableCookieCache: true },
-  });
+  const { data, error } = await authClient.getSession();
+  console.log("[refreshSession] response:", { data, error });
 }

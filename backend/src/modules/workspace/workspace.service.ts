@@ -44,6 +44,31 @@ export const workspaceService = {
     });
   },
 
+  /**
+   * Safety net: if a user has zero workspaces (e.g. OAuth sign-up,
+   * or workspace creation failed during email sign-up), auto-create
+   * a personal workspace.  Invite-only sign-ups already have a
+   * membership so this won't fire for them.
+   */
+  async ensurePersonalWorkspace(userId: string, userName: string) {
+    const count = await prisma.workspaceMember.count({ where: { userId } });
+    if (count > 0) return null;
+
+    const workspaceName = userName ? `${userName}'s Workspace` : "My Workspace";
+
+    return prisma.workspace.create({
+      data: {
+        name: workspaceName,
+        ownerId: userId,
+        members: { create: { userId, role: "OWNER" } },
+      },
+      include: {
+        owner: { select: { id: true, name: true, email: true, image: true } },
+        _count: { select: { members: true } },
+      },
+    });
+  },
+
   /** List all workspaces the user belongs to */
   async listByUser(userId: string) {
     return prisma.workspace.findMany({

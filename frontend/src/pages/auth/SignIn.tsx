@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { FiMail } from "react-icons/fi";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
@@ -17,6 +17,7 @@ export default function SignIn() {
   >({});
   const [remember, setRemember] = useState(false);
   const signIn = useSignIn();
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -34,12 +35,13 @@ export default function SignIn() {
     signIn.mutate(r.data);
   };
 
-  const handleSocial = async (
-    provider: "google" | "github",
-    e: React.MouseEvent,
-  ) => {
-    e.preventDefault();
-    await authClient.signIn.social({
+  // Already signed in — skip the form
+  if (session && !sessionLoading) {
+    return <Navigate to="/workspaces" replace />;
+  }
+
+  const handleSocial = (provider: "google" | "github") => {
+    authClient.signIn.social({
       provider,
       callbackURL: `${FRONTEND_URL}/workspaces`,
       newUserCallbackURL: `${FRONTEND_URL}/workspaces`,
@@ -127,11 +129,11 @@ export default function SignIn() {
         <div className="grid grid-cols-2 gap-2.5">
           <SocialButton
             provider="google"
-            onClick={(e) => handleSocial("google", e)}
+            onClick={() => handleSocial("google")}
           />
           <SocialButton
             provider="github"
-            onClick={(e) => handleSocial("github", e)}
+            onClick={() => handleSocial("github")}
           />
         </div>
       </form>

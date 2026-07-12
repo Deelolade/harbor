@@ -8,6 +8,8 @@ export default function ProtectedRoute({
 }) {
   const { data: session, isPending } = authClient.useSession();
 
+  console.log("[ProtectedRoute]", { isPending, hasSession: !!session });
+
   if (isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0D0E12]">
