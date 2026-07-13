@@ -306,6 +306,41 @@ export default function ProjectView() {
           </div>
         </div>
       )}
+
+      {/* Delete board modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-white/[0.06] bg-[#111318] p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
+                <FiTrash2 size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Delete board</h3>
+                <p className="text-sm text-zinc-500">
+                  This will permanently delete "{deleteTarget.name}" and all its
+                  columns.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 rounded-xl border border-[#1F1F23] px-4 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteBoard.mutate(deleteTarget.id)}
+                disabled={deleteBoard.isPending}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-40"
+              >
+                {deleteBoard.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
