@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 
-const DEFAULT_COLUMNS = ["Backlog", "To Do", "In Progress", "Review", "Done"];
+const DEFAULT_COLUMNS = ["To Do", "In Progress", "Done"];
 
 export interface CreateBoardInput {
   name: string;

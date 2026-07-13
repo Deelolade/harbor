@@ -51,6 +51,9 @@ export default function ProjectView() {
   const [newBoardName, setNewBoardName] = useState("");
   const [showNewCol, setShowNewCol] = useState<string | null>(null);
   const [newColName, setNewColName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Board | null>(null);
+
+  const suggestedColumns = ["Backlog", "Review"];
 
   const board = boards.find((b) => b.id === activeBoard) || boards[0];
   if (boards.length > 0 && !activeBoard) setActiveBoard(boards[0].id);
@@ -76,11 +79,17 @@ export default function ProjectView() {
   });
 
   const createColumn = useMutation({
-    mutationFn: async (boardId: string) => {
+    mutationFn: async ({
+      boardId,
+      name,
+    }: {
+      boardId: string;
+      name: string;
+    }) => {
       const res = await fetch(`${API_URL}/api/boards/${boardId}/columns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newColName.trim() }),
+        body: JSON.stringify({ name: name.trim() }),
         credentials: "include",
       });
       if (!res.ok) throw new Error();
@@ -92,6 +101,31 @@ export default function ProjectView() {
       setNewColName("");
     },
     onError: () => toast.error("Failed to create column."),
+  });
+
+  const deleteBoard = useMutation({
+    mutationFn: async (boardId: string) => {
+      const res = await fetch(`${API_URL}/api/boards/${boardId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data.message || "You don't have permission to delete this board.",
+        );
+      }
+    },
+    onSuccess: (_data, boardId) => {
+      queryClient.invalidateQueries({ queryKey: ["boards", projectId] });
+      if (activeBoard === boardId) setActiveBoard(null);
+      setDeleteTarget(null);
+      toast.success("Board deleted.");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to delete board.");
+      setDeleteTarget(null);
+    },
   });
 
   if (isLoading)
@@ -116,17 +150,29 @@ export default function ProjectView() {
 
         <div className="ml-8 flex items-center gap-1">
           {boards.map((b) => (
-            <button
+            <div
               key={b.id}
-              onClick={() => setActiveBoard(b.id)}
-              className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                b.id === (activeBoard || boards[0]?.id)
-                  ? "bg-white/[0.06] text-white"
-                  : "text-zinc-500 hover:text-zinc-300"
+              className={`group flex items-center gap-0.5 rounded-lg ${
+                b.id === (activeBoard || boards[0]?.id) ? "bg-white/[0.06]" : ""
               }`}
             >
-              {b.name}
-            </button>
+              <button
+                onClick={() => setActiveBoard(b.id)}
+                className={`px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                  b.id === (activeBoard || boards[0]?.id)
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {b.name}
+              </button>
+              <button
+                onClick={() => setDeleteTarget(b)}
+                className="mr-1 rounded p-1 text-zinc-600 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all"
+              >
+                <FiTrash2 size={12} />
+              </button>
+            </div>
           ))}
           <button
             onClick={() => setShowNewBoard(true)}
@@ -150,11 +196,7 @@ export default function ProjectView() {
                   {col.name}
                 </span>
               </div>
-              <div className="flex-1 p-3">
-                <p className="text-xs text-zinc-600 text-center py-8">
-                  No tasks yet
-                </p>
-              </div>
+              <div className="flex-1" />
             </div>
           ))}
           {/* Add column */}
@@ -164,7 +206,11 @@ export default function ProjectView() {
                 value={newColName}
                 onChange={(e) => setNewColName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") createColumn.mutate(board.id);
+                  if (e.key === "Enter")
+                    createColumn.mutate({
+                      boardId: board.id,
+                      name: newColName,
+                    });
                   if (e.key === "Escape") setShowNewCol(null);
                 }}
                 autoFocus
@@ -173,7 +219,9 @@ export default function ProjectView() {
               />
               <div className="flex gap-2">
                 <button
-                  onClick={() => createColumn.mutate(board.id)}
+                  onClick={() =>
+                    createColumn.mutate({ boardId: board.id, name: newColName })
+                  }
                   disabled={!newColName.trim()}
                   className="flex-1 rounded-lg bg-amber-500 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-40"
                 >
@@ -188,12 +236,25 @@ export default function ProjectView() {
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => setShowNewCol(board.id)}
-              className="flex w-64 shrink-0 items-center gap-2 rounded-xl border border-white/[0.04] px-4 py-3 text-[13px] text-zinc-600 hover:border-white/[0.08] hover:text-zinc-400"
-            >
-              <FiPlus size={14} /> Add column
-            </button>
+            <div className="flex items-center gap-2">
+              {suggestedColumns.map((col) => (
+                <button
+                  key={col}
+                  onClick={() =>
+                    createColumn.mutate({ boardId: board.id, name: col })
+                  }
+                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-xs text-zinc-500 hover:border-zinc-500 hover:text-zinc-400 transition-colors"
+                >
+                  <FiPlus size={12} /> {col}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowNewCol(board.id)}
+                className="flex items-center gap-1.5 rounded-lg border border-white/[0.04] px-3 py-2 text-xs text-zinc-600 hover:border-white/[0.08] hover:text-zinc-400 transition-colors"
+              >
+                <FiPlus size={12} /> Add column
+              </button>
+            </div>
           )}
         </div>
       ) : (
