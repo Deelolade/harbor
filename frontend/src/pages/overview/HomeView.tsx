@@ -156,7 +156,9 @@ export default function HomeView() {
               className="group relative cursor-pointer rounded-2xl border border-white/[0.04] bg-[#111318] p-5 hover:border-white/[0.08] transition-colors"
             >
               <div className="flex items-start justify-between mb-3">
-                <span className="text-2xl">{p.image || "📁"}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] text-zinc-500">
+                  <FiFolder size={20} />
+                </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => {

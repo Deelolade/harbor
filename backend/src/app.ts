@@ -5,6 +5,8 @@ import { COOKIE_SECRET, FRONTEND_URL } from "./utils/env.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { workspaceRoutes } from "./modules/workspace/workspace.routes.js";
 import { projectRoutes } from "./modules/workspace/project.routes.js";
+import { boardRoutes } from "./modules/workspace/board.routes.js";
+import { columnRoutes } from "./modules/workspace/column.routes.js";
 
 const fastify = Fastify({ logger: true });
 const port = 8800;
@@ -30,6 +32,8 @@ fastify.route({
 
 await fastify.register(workspaceRoutes);
 await fastify.register(projectRoutes);
+await fastify.register(boardRoutes);
+await fastify.register(columnRoutes);
 
 fastify.listen({ port }, (err, address) => {
   if (err) {

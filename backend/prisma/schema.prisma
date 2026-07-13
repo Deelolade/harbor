@@ -146,11 +146,39 @@ model Project {
   workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdById String
   createdBy   User              @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  boards      Board[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
   @@index([workspaceId])
   @@map("project")
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  archived  Boolean  @default(false)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns   Column[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("board")
+}
+
+model Column {
+  id      String  @id @default(cuid())
+  name    String
+  order   Int     @default(0)
+  color   String?
+  boardId String
+  board   Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@index([boardId])
+  @@map("column")
 }
 
 enum ProjectVisibility {

@@ -238,7 +238,7 @@ export default function Sidebar({
                         : "text-zinc-500 hover:bg-white/[0.04] hover:text-white"
                     }`}
                   >
-                    <span>{p.image || "📁"}</span>
+                    <FiFolder size={14} />
                     <span className="truncate">{p.name}</span>
                   </button>
                 ))}

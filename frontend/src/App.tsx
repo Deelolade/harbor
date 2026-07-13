@@ -12,6 +12,7 @@ import HomeView from "./pages/overview/HomeView";
 import SettingsView from "./pages/overview/SettingsView";
 import MembersView from "./pages/overview/MembersView";
 import PlaceholderView from "./pages/overview/PlaceholderView";
+import ProjectView from "./pages/overview/ProjectView";
 import WorkspacesList from "./pages/workspaces/WorkspacesList";
 
 function Home() {
@@ -62,10 +63,7 @@ export default function App() {
           element={<PlaceholderView title="Client views" />}
         />
         <Route path="settings" element={<SettingsView />} />
-        <Route
-          path="projects/:id"
-          element={<PlaceholderView title="Project" />}
-        />
+        <Route path="projects/:id" element={<ProjectView />} />
       </Route>
     </Routes>
   );
