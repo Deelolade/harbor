@@ -46,7 +46,35 @@ export const boardService = {
     return prisma.board.findMany({
       where: { projectId },
       include: {
-        columns: { orderBy: { order: "asc" } },
+        columns: {
+          orderBy: { order: "asc" },
+          include: {
+            tasks: {
+              orderBy: { order: "asc" },
+              include: {
+                subtasks: { orderBy: { order: "asc" } },
+                assignee: {
+                  select: { id: true, name: true, email: true, image: true },
+                },
+                createdBy: {
+                  select: { id: true, name: true, email: true, image: true },
+                },
+                updatedBy: {
+                  select: { id: true, name: true, email: true, image: true },
+                },
+                labels: true,
+                attachments: true,
+                comments: {
+                  orderBy: { createdAt: "asc" },
+                  include: {
+                    author: { select: { id: true, name: true, image: true } },
+                  },
+                },
+                column: { select: { id: true, name: true, boardId: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { order: "asc" },
     });

@@ -7,6 +7,9 @@ import { workspaceRoutes } from "./modules/workspace/workspace.routes.js";
 import { projectRoutes } from "./modules/workspace/project.routes.js";
 import { boardRoutes } from "./modules/workspace/board.routes.js";
 import { columnRoutes } from "./modules/workspace/column.routes.js";
+import { taskRoutes } from "./modules/workspace/task.routes.js";
+import { subtaskRoutes } from "./modules/workspace/subtask.routes.js";
+import { commentRoutes } from "./modules/workspace/comment.routes.js";
 
 const fastify = Fastify({ logger: true });
 const port = 8800;
@@ -34,6 +37,9 @@ await fastify.register(workspaceRoutes);
 await fastify.register(projectRoutes);
 await fastify.register(boardRoutes);
 await fastify.register(columnRoutes);
+await fastify.register(taskRoutes);
+await fastify.register(subtaskRoutes);
+await fastify.register(commentRoutes);
 
 fastify.listen({ port }, (err, address) => {
   if (err) {

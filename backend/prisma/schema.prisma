@@ -27,6 +27,10 @@ model User {
   memberships     WorkspaceMember[]
   sentInvitations Invitation[]     @relation("Inviter")
   projects        Project[]
+  assignedTasks   Task[]            @relation("TaskAssignee")
+  createdTasks    Task[]            @relation("TaskCreator")
+  updatedTasks    Task[]            @relation("TaskUpdater")
+  comments        Comment[]
 
   @@unique([email])
   @@map("user")
@@ -176,9 +180,94 @@ model Column {
   color   String?
   boardId String
   board   Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks   Task[]
 
   @@index([boardId])
   @@map("column")
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  priority    Priority     @default(MEDIUM)
+  status      String       @default("backlog")
+  dueDate     DateTime?
+  order       Int          @default(0)
+  columnId    String
+  column      Column       @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdById String
+  createdBy   User         @relation("TaskCreator", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?        @relation("TaskUpdater", fields: [updatedById], references: [id])
+  labels      TaskLabel[]
+  subtasks    Subtask[]
+  attachments Attachment[]
+  comments    Comment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([columnId])
+  @@map("task")
+}
+
+model Subtask {
+  id        String   @id @default(cuid())
+  title     String
+  completed Boolean  @default(false)
+  order     Int      @default(0)
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("subtask")
+}
+
+model TaskLabel {
+  id     String @id @default(cuid())
+  name   String
+  color  String @default("#3B82F6")
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_label")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("attachment")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@map("comment")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum ProjectVisibility {
