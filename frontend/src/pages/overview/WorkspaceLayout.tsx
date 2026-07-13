@@ -1,28 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Outlet, useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { FiChevronRight } from "react-icons/fi";
 import Sidebar from "../../components/workspace/Sidebar";
 import ProfileModal from "../../components/workspace/ProfileModal";
 import { authClient } from "../../lib/auth-client";
-import { FiChevronRight } from "react-icons/fi";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+
+async function fetchWorkspace(id: string) {
+  const res = await fetch(`${API_URL}/api/workspaces/${id}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load workspace");
+  return res.json();
+}
 
 export default function WorkspaceLayout() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { data: session } = authClient.useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [workspaceName, setWorkspaceName] = useState("Loading...");
 
-  useEffect(() => {
-    if (!workspaceId) return;
-    fetch(`${API_URL}/api/workspaces/${workspaceId}`, {
-      credentials: "include",
-    })
-      .then((r) => r.json())
-      .then((data) => setWorkspaceName(data.name || "Workspace"))
-      .catch(() => setWorkspaceName("Workspace"));
-  }, [workspaceId]);
+  const { data: workspace } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => fetchWorkspace(workspaceId!),
+    enabled: !!workspaceId,
+  });
+
+  const workspaceName = workspace?.name || "Workspace";
 
   return (
     <div className="flex h-screen bg-[#0D0E12] text-white">
@@ -35,7 +41,6 @@ export default function WorkspaceLayout() {
       />
 
       <main className="flex-1 overflow-auto">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 border-b border-white/[0.04] px-8 py-3">
           <Link
             to="/workspaces"

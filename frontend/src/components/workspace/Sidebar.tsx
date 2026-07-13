@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   FiHome,
   FiInbox,
@@ -53,42 +54,26 @@ export default function Sidebar({
   const location = useLocation();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
 
-  // Close switcher on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        switcherRef.current &&
-        !switcherRef.current.contains(e.target as Node)
-      ) {
-        setSwitcherOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const { data: workspaces = [] } = useQuery<WorkspaceInfo[]>({
+    queryKey: ["workspaces"],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces`, { credentials: "include" }).then((r) =>
+        r.json(),
+      ),
+    staleTime: 30_000,
+  });
 
-  // Fetch workspaces for the switcher
-  useEffect(() => {
-    fetch(`${API_URL}/api/workspaces`, { credentials: "include" })
-      .then((r) => r.json())
-      .then(setWorkspaces)
-      .catch(() => {});
-  }, []);
-
-  // Fetch projects for this workspace
-  useEffect(() => {
-    if (!workspaceId) return;
-    fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
-      credentials: "include",
-    })
-      .then((r) => r.json())
-      .then(setProjects)
-      .catch(() => {});
-  }, [workspaceId]);
+  const { data: projects = [] } = useQuery<ProjectItem[]>({
+    queryKey: ["sidebar-projects", workspaceId],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
+        credentials: "include",
+      }).then((r) => r.json()),
+    enabled: !!workspaceId,
+    staleTime: 30_000,
+  });
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -99,28 +84,14 @@ export default function Sidebar({
 
   const navItems = [
     { icon: <FiHome size={15} />, label: "Home", path: basePath },
-    {
-      icon: <FiInbox size={15} />,
-      label: "Inbox",
-      path: `${basePath}/inbox`,
-      badge: "3",
-    },
-    {
-      icon: <FiCheckSquare size={15} />,
-      label: "My tasks",
-      path: `${basePath}/tasks`,
-      badge: "7",
-    },
+    // { icon: <FiInbox size={15} />, label: "Inbox", path: `${basePath}/inbox`, badge: "3" },
+    // { icon: <FiCheckSquare size={15} />, label: "My tasks", path: `${basePath}/tasks`, badge: "7" },
     {
       icon: <FiUsers size={15} />,
       label: "Members",
       path: `${basePath}/members`,
     },
-    {
-      icon: <FiEye size={15} />,
-      label: "Client views",
-      path: `${basePath}/clients`,
-    },
+    // { icon: <FiEye size={15} />, label: "Client views", path: `${basePath}/clients` },
     {
       icon: <FiSettings size={15} />,
       label: "Settings",

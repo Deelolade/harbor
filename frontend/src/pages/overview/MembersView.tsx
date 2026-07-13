@@ -1,15 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  FiPlus,
-  FiX,
-  FiTrash2,
-  FiShield,
-  FiUser,
-  FiChevronDown,
-} from "react-icons/fi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { FiPlus, FiX } from "react-icons/fi";
 import { toast } from "sonner";
-import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -21,6 +14,14 @@ interface Member {
   user: { id: string; name: string; email: string; image?: string };
 }
 
+async function fetchMembers(workspaceId: string): Promise<Member[]> {
+  const res = await fetch(`${API_URL}/api/workspaces/${workspaceId}/members`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load members");
+  return res.json();
+}
+
 const roleColors: Record<string, string> = {
   OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
@@ -29,54 +30,21 @@ const roleColors: Record<string, string> = {
 
 export default function MembersView() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { data: session } = authClient.useSession();
+  const queryClient = useQueryClient();
 
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ["members", workspaceId],
+    queryFn: () => fetchMembers(workspaceId!),
+    enabled: !!workspaceId,
+  });
+
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviting, setInviting] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const currentUserId = session?.user?.id;
-  const currentMember = members.find((m) => m.userId === currentUserId);
-  const canManage =
-    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
-  const isOwner = currentMember?.role === "OWNER";
-
-  const fetchMembers = async () => {
-    setLoading(true);
-    try {
+  const inviteMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/members`,
-        { credentials: "include" },
-      );
-      if (res.ok) setMembers(await res.json());
-    } catch {
-      toast.error("Failed to load members.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMembers();
-  }, [workspaceId]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!openMenu) return;
-    const close = () => setOpenMenu(null);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [openMenu]);
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    try {
-      const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/invitations`,
+        `${API_URL}/api/workspaces/${workspaceId}/invites`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -85,65 +53,40 @@ export default function MembersView() {
         },
       );
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
+        const d = await res.json();
+        throw new Error(d.message);
       }
+    },
+    onSuccess: () => {
       toast.success("Invitation sent!");
       setShowInvite(false);
       setInviteEmail("");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to send invitation.");
-    } finally {
-      setInviting(false);
-    }
-  };
+    },
+    onError: (err: any) =>
+      toast.error(err?.message || "Failed to send invitation."),
+  });
 
-  const handleRemove = async (member: Member) => {
-    if (!confirm(`Remove ${member.user.name} from this workspace?`)) return;
-    try {
+  const removeMutation = useMutation({
+    mutationFn: async (memberId: string) => {
       const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/members/${member.userId}`,
-        { method: "DELETE", credentials: "include" },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
-      }
-      setMembers((prev) => prev.filter((m) => m.id !== member.id));
-      toast.success(`${member.user.name} removed.`);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to remove member.");
-    }
-  };
-
-  const handleRoleChange = async (member: Member, newRole: string) => {
-    setOpenMenu(null);
-    if (newRole === member.role) return;
-    try {
-      const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/members/${member.userId}`,
+        `${API_URL}/api/workspaces/${workspaceId}/members/${memberId}`,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: newRole }),
+          method: "DELETE",
           credentials: "include",
         },
       );
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
+        const d = await res.json();
+        throw new Error(d.message);
       }
-      const updated = await res.json();
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === member.id ? { ...m, role: updated.role } : m,
-        ),
-      );
-      toast.success(`${member.user.name} is now ${newRole.toLowerCase()}.`);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to update role.");
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members", workspaceId] });
+      toast.success("Member removed.");
+    },
+    onError: (err: any) =>
+      toast.error(err?.message || "Failed to remove member."),
+  });
 
   return (
     <div className="p-8">
@@ -154,118 +97,46 @@ export default function MembersView() {
             {members.length} member{members.length !== 1 ? "s" : ""}
           </p>
         </div>
-        {canManage && (
-          <button
-            onClick={() => setShowInvite(true)}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-          >
-            <FiPlus size={15} />
-            Invite member
-          </button>
-        )}
+        <button
+          onClick={() => setShowInvite(true)}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+        >
+          <FiPlus size={15} /> Invite member
+        </button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </div>
-      ) : members.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          No members yet — invite your team.
-        </p>
       ) : (
         <div className="space-y-2 max-w-xl">
-          {members.map((m) => {
-            const isSelf = m.userId === currentUserId;
-            const isTargetOwner = m.role === "OWNER";
-
-            return (
-              <div
-                key={m.id}
-                className="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-[#111318] px-4 py-3"
-              >
-                <img
-                  src={m.user.image || ""}
-                  alt=""
-                  className="h-9 w-9 rounded-full bg-white/[0.06]"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-white">
-                      {m.user.name}
-                    </p>
-                    {isSelf && (
-                      <span className="text-[10px] text-zinc-600">(you)</span>
-                    )}
-                  </div>
-                  <p className="truncate text-xs text-zinc-500">
-                    {m.user.email}
-                  </p>
-                </div>
-
-                {/* Role badge */}
-                <span
-                  className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
-                    roleColors[m.role] || roleColors.MEMBER
-                  }`}
-                >
-                  {m.role}
-                </span>
-
-                {/* Actions — only for admins/owners on other members */}
-                {canManage && !isSelf && !isTargetOwner && (
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenu(openMenu === m.id ? null : m.id);
-                      }}
-                      className="rounded-md p-1 text-zinc-500 hover:bg-white/[0.06] hover:text-white transition-colors"
-                    >
-                      <FiChevronDown size={14} />
-                    </button>
-
-                    {openMenu === m.id && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/[0.06] bg-[#1A1D24] p-1 shadow-xl z-10"
-                      >
-                        {isOwner && m.role !== "ADMIN" && (
-                          <button
-                            onClick={() => handleRoleChange(m, "ADMIN")}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors"
-                          >
-                            <FiShield size={13} />
-                            Make admin
-                          </button>
-                        )}
-                        {m.role === "ADMIN" && (
-                          <button
-                            onClick={() => handleRoleChange(m, "MEMBER")}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors"
-                          >
-                            <FiUser size={13} />
-                            Demote to member
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleRemove(m)}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                        >
-                          <FiTrash2 size={13} />
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+          {members.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-[#111318] px-4 py-3"
+            >
+              <img
+                src={m.user.image || ""}
+                alt=""
+                className="h-9 w-9 rounded-full bg-white/[0.06]"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm font-medium text-white">
+                  {m.user.name}
+                </p>
+                <p className="truncate text-xs text-zinc-500">{m.user.email}</p>
               </div>
-            );
-          })}
+              <span
+                className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${roleColors[m.role] || roleColors.MEMBER}`}
+              >
+                {m.role}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Invite modal */}
       {showInvite && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-white/[0.06] bg-[#111318] p-6 shadow-2xl">
@@ -281,21 +152,18 @@ export default function MembersView() {
                 <FiX size={18} />
               </button>
             </div>
-
             <p className="text-sm text-zinc-500 mb-4">
               They will receive an email with a link to join this workspace.
             </p>
-
             <input
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+              onKeyDown={(e) => e.key === "Enter" && inviteMutation.mutate()}
               type="email"
               placeholder="colleague@company.com"
               autoFocus
               className="h-[48px] w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15 mb-4"
             />
-
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -307,11 +175,11 @@ export default function MembersView() {
                 Cancel
               </button>
               <button
-                onClick={handleInvite}
-                disabled={inviting || !inviteEmail.trim()}
+                onClick={() => inviteMutation.mutate()}
+                disabled={inviteMutation.isPending || !inviteEmail.trim()}
                 className="flex-1 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 disabled:opacity-40 transition-colors"
               >
-                {inviting ? "Sending..." : "Send invite"}
+                {inviteMutation.isPending ? "Sending..." : "Send invite"}
               </button>
             </div>
           </div>

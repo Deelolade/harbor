@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiTrash2, FiX, FiFolder } from "react-icons/fi";
 import { toast } from "sonner";
 import { authClient } from "../../lib/auth-client";
+import { PiFlagPennantDuotone } from "react-icons/pi";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -22,16 +24,29 @@ const visibilityColors: Record<string, string> = {
   PUBLIC: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
 
+async function fetchProjects(workspaceId: string): Promise<Project[]> {
+  const res = await fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load projects");
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
 export default function HomeView() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const name = session?.user?.name?.split(" ")[0] || "User";
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["projects", workspaceId],
+    queryFn: () => fetchProjects(workspaceId!),
+    enabled: !!workspaceId,
+  });
+
   const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -39,29 +54,8 @@ export default function HomeView() {
     visibility: "WORKSPACE",
   });
 
-  const fetchProjects = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/projects`,
-        { credentials: "include" },
-      );
-      if (res.ok) setProjects(await res.json());
-    } catch {
-      toast.error("Failed to load projects.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProjects();
-  }, [workspaceId]);
-
-  const handleCreate = async () => {
-    if (!newProject.name.trim()) return;
-    setCreating(true);
-    try {
+  const createMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(
         `${API_URL}/api/workspaces/${workspaceId}/projects`,
         {
@@ -72,11 +66,13 @@ export default function HomeView() {
         },
       );
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
+        const d = await res.json();
+        throw new Error(d.message);
       }
-      const created = await res.json();
-      setProjects((prev) => [created, ...prev]);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects", workspaceId] });
       setShowCreate(false);
       setNewProject({
         name: "",
@@ -85,34 +81,32 @@ export default function HomeView() {
         visibility: "WORKSPACE",
       });
       toast.success("Project created!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create project.");
-    } finally {
-      setCreating(false);
-    }
-  };
+    },
+    onError: (err: any) =>
+      toast.error(err?.message || "Failed to create project."),
+  });
 
-  const handleDelete = async (project: Project) => {
-    if (!confirm(`Delete "${project.name}" and all its data?`)) return;
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (project: Project) => {
       const res = await fetch(`${API_URL}/api/projects/${project.id}`, {
         method: "DELETE",
         credentials: "include",
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
+        const d = await res.json();
+        throw new Error(d.message);
       }
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects", workspaceId] });
       toast.success("Project deleted.");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to delete project.");
-    }
-  };
+    },
+    onError: (err: any) =>
+      toast.error(err?.message || "Failed to delete project."),
+  });
 
   return (
     <div className="p-8">
-      {/* Greeting */}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Good morning, {name}</h1>
@@ -130,8 +124,7 @@ export default function HomeView() {
         </button>
       </div>
 
-      {/* Projects */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </div>
@@ -168,7 +161,8 @@ export default function HomeView() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(p);
+                      if (confirm(`Delete "${p.name}"?`))
+                        deleteMutation.mutate(p);
                     }}
                     className="rounded-md p-1.5 text-zinc-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                   >
@@ -184,14 +178,12 @@ export default function HomeView() {
               )}
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase ${
-                    visibilityColors[p.visibility] || visibilityColors.WORKSPACE
-                  }`}
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase ${visibilityColors[p.visibility] || visibilityColors.WORKSPACE}`}
                 >
                   {p.visibility.toLowerCase()}
                 </span>
                 <span className="text-xs text-zinc-600">
-                  by {p.createdBy.name}
+                  by {p.createdBy.name.split(" ")[0].toLocaleLowerCase()}
                 </span>
               </div>
             </div>
@@ -199,7 +191,6 @@ export default function HomeView() {
         </div>
       )}
 
-      {/* Create project modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-[#111318] p-6 shadow-2xl">
@@ -227,7 +218,6 @@ export default function HomeView() {
                   placeholder="📁"
                 />
               </div>
-
               <div>
                 <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">
                   Name
@@ -237,13 +227,14 @@ export default function HomeView() {
                   onChange={(e) =>
                     setNewProject({ ...newProject, name: e.target.value })
                   }
-                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && createMutation.mutate()
+                  }
                   autoFocus
                   placeholder="e.g. Mobile App"
                   className="h-[48px] w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15"
                 />
               </div>
-
               <div>
                 <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">
                   Description <span className="text-zinc-600">(optional)</span>
@@ -261,7 +252,6 @@ export default function HomeView() {
                   className="w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 py-2.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15 resize-none"
                 />
               </div>
-
               <div>
                 <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">
                   Visibility
@@ -294,11 +284,11 @@ export default function HomeView() {
                 Cancel
               </button>
               <button
-                onClick={handleCreate}
-                disabled={creating || !newProject.name.trim()}
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending || !newProject.name.trim()}
                 className="flex-1 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 disabled:opacity-40 transition-colors"
               >
-                {creating ? "Creating..." : "Create project"}
+                {createMutation.isPending ? "Creating..." : "Create project"}
               </button>
             </div>
           </div>

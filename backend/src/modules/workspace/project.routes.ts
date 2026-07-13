@@ -21,7 +21,9 @@ async function requireMembership(
 ) {
   const member = await workspaceService.getMember(workspaceId, userId);
   if (!member) {
-    reply.status(403).send({ message: "You are not a member of this workspace." });
+    reply
+      .status(403)
+      .send({ message: "You are not a member of this workspace." });
     return null;
   }
   return member;
@@ -53,7 +55,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
       ) {
         return reply
           .status(400)
-          .send({ message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC." });
+          .send({
+            message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
+          });
       }
 
       const project = await projectService.create(id, user.id, {
@@ -142,7 +146,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
       if (!canManage) {
         return reply
           .status(403)
-          .send({ message: "You don't have permission to update this project." });
+          .send({
+            message: "You don't have permission to update this project.",
+          });
       }
 
       const { name, description, image, visibility } =
@@ -163,7 +169,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
       ) {
         return reply
           .status(400)
-          .send({ message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC." });
+          .send({
+            message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
+          });
       }
 
       const updated = await projectService.update(id, {
@@ -207,7 +215,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
       if (!canManage) {
         return reply
           .status(403)
-          .send({ message: "You don't have permission to delete this project." });
+          .send({
+            message: "You don't have permission to delete this project.",
+          });
       }
 
       await projectService.delete(id);
