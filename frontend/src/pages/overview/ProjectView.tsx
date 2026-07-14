@@ -43,6 +43,10 @@ interface Task {
   dueDate?: string;
   order: number;
   assignee?: { id: string; name: string; email: string; image?: string } | null;
+  subtasks: Subtask[];
+  labels: Label[];
+  _count?: { comments: number; attachments: number };
+  // Lazy-loaded in task modal
   createdBy?: {
     id: string;
     name: string;
@@ -55,16 +59,14 @@ interface Task {
     email: string;
     image?: string;
   } | null;
-  subtasks: Subtask[];
-  labels: Label[];
-  attachments: { id: string; name: string; url: string }[];
-  comments: {
+  attachments?: { id: string; name: string; url: string }[];
+  comments?: {
     id: string;
     content: string;
     author: { id: string; name: string; image?: string };
     createdAt: string;
   }[];
-  column: { id: string; name: string; boardId: string };
+  column?: { id: string; name: string; boardId: string };
 }
 interface Column {
   id: string;
@@ -471,7 +473,7 @@ export default function ProjectView() {
       {selectedTask && (
         <TaskModal
           key={selectedTask.id}
-          task={selectedTask}
+          taskId={selectedTask.id}
           members={members}
           onClose={() => {
             setSelectedTask(null);

@@ -210,6 +210,9 @@ model Task {
   updatedAt   DateTime     @updatedAt
 
   @@index([columnId])
+  @@index([assigneeId])
+  @@index([createdById])
+  @@index([updatedById])
   @@map("task")
 }
 
@@ -260,6 +263,7 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   @@index([taskId])
+  @@index([authorId])
   @@map("comment")
 }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   FiX,
   FiTrash2,
@@ -88,15 +88,28 @@ const labelColors = [
 ];
 
 export default function TaskModal({
-  task: initialTask,
+  taskId,
   members,
   onClose,
 }: {
-  task: Task;
+  taskId: string;
   members: Member[];
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+
+  const { data: initialTask, isLoading } = useQuery({
+    queryKey: ["task", taskId],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      return res.json() as Promise<Task>;
+    },
+    enabled: !!taskId,
+    staleTime: 0,
+  });
   const [title, setTitle] = useState(initialTask.title);
   const [description, setDescription] = useState(initialTask.description || "");
   const [priority, setPriority] = useState(initialTask.priority);
@@ -233,7 +246,15 @@ export default function TaskModal({
   };
 
   const completed = initialTask.subtasks.filter((s) => s.completed).length;
-  const total = initialTask.subtasks.length;
+  const total = initialTask?.subtasks?.length || 0;
+
+  if (isLoading || !initialTask) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-12">

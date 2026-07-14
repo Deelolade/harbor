@@ -1,9 +1,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
 import { workspaceService } from "./workspace.service.js";
 import { sendInviteEmail } from "../../utils/email.js";
 import crypto from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
+import { getSessionUser } from "../../lib/session.js";
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
@@ -12,13 +12,6 @@ import type {
 } from "./workspace.service.js";
 
 // ── Helpers ──
-
-async function getSessionUser(request: FastifyRequest) {
-  const session = await auth.api.getSession({
-    headers: request.headers as HeadersInit,
-  });
-  return session?.user ?? null;
-}
 
 /** Check that the requester belongs to the workspace */
 async function requireMembership(workspaceId: string, userId: string) {
@@ -74,11 +67,13 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ message: "Unauthorized" });
       }
 
-      // Safety net: auto-create personal workspace if user has none
-      // (covers OAuth sign-ups; invite-only users skip this implicitly)
-      await workspaceService.ensurePersonalWorkspace(user.id, user.name);
-
+      // Only create personal workspace if user has none (check list result)
       const workspaces = await workspaceService.listByUser(user.id);
+      if (workspaces.length === 0) {
+        await workspaceService.ensurePersonalWorkspace(user.id, user.name);
+        const fresh = await workspaceService.listByUser(user.id);
+        return reply.send(fresh);
+      }
       return reply.send(workspaces);
     },
   );
@@ -106,6 +101,27 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
       }
 
       return reply.send(workspace);
+    },
+  );
+
+  // ── Get workspace name only (lightweight, for breadcrumbs) ──
+  fastify.get(
+    "/api/workspaces/:id/name",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+
+      const { id } = request.params as { id: string };
+      const member = await requireMembership(id, user.id);
+      if (!member) return reply.status(403).send({ message: "Not a member." });
+
+      const ws = await prisma.workspace.findUnique({
+        where: { id },
+        select: { name: true },
+      });
+      if (!ws) return reply.status(404).send({ message: "Not found." });
+
+      return reply.send({ name: ws.name });
     },
   );
 
@@ -372,11 +388,18 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
       if (!email)
         return reply.status(400).send({ message: "Email is required." });
 
-      const workspace = await workspaceService.getById(id);
-      const alreadyMember = workspace?.members.find(
-        (m) => m.user.email.toLowerCase() === email.toLowerCase(),
-      );
-      if (alreadyMember)
+      // Check membership directly instead of loading full workspace
+      const [existingMember, workspace] = await Promise.all([
+        prisma.user
+          .findUnique({
+            where: { email: email.toLowerCase() },
+            select: { id: true },
+          })
+          .then((u) => (u ? workspaceService.getMember(id, u.id) : null)),
+        prisma.workspace.findUnique({ where: { id }, select: { name: true } }),
+      ]);
+
+      if (existingMember)
         return reply.status(409).send({ message: "User is already a member." });
 
       const token = crypto.randomBytes(32).toString("hex");
@@ -474,11 +497,13 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .send({ message: "This invite is for a different email." });
       }
 
-      await workspaceService.addMember(workspaceId, {
-        userId: acceptUser.id,
-        role: "MEMBER",
-      });
-      await prisma.verification.delete({ where: { id: record.id } });
+      await Promise.all([
+        workspaceService.addMember(workspaceId, {
+          userId: acceptUser.id,
+          role: "MEMBER",
+        }),
+        prisma.verification.delete({ where: { id: record.id } }),
+      ]);
 
       return reply.status(200).send({ workspaceId });
     },

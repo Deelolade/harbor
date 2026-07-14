@@ -2,6 +2,8 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import { COOKIE_SECRET, FRONTEND_URL } from "./utils/env.js";
+import { cachedAuth } from "./lib/cached-auth.js";
+import compress from "@fastify/compress";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { workspaceRoutes } from "./modules/workspace/workspace.routes.js";
 import { projectRoutes } from "./modules/workspace/project.routes.js";
@@ -26,6 +28,10 @@ await fastify.register(cors, {
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
 });
+
+await fastify.register(compress, { global: true, threshold: 1024 });
+
+await fastify.register(cachedAuth);
 
 fastify.route({
   method: ["GET", "POST", "PUT", "PATCH", "DELETE"],

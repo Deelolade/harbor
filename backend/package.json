@@ -6,6 +6,7 @@
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.20",
     "@fastify/bearer-auth": "^10.1.2",
+    "@fastify/compress": "^9.0.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/env": "^7.0.0",

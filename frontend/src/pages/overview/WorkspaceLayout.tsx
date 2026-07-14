@@ -8,14 +8,6 @@ import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
-async function fetchWorkspace(id: string) {
-  const res = await fetch(`${API_URL}/api/workspaces/${id}`, {
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to load workspace");
-  return res.json();
-}
-
 export default function WorkspaceLayout() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { data: session } = authClient.useSession();
@@ -24,11 +16,16 @@ export default function WorkspaceLayout() {
 
   const { data: workspace } = useQuery({
     queryKey: ["workspace", workspaceId],
-    queryFn: () => fetchWorkspace(workspaceId!),
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : null)),
     enabled: !!workspaceId,
+    staleTime: 5 * 60 * 1000,
+    select: (data) => data?.name || "",
   });
 
-  const workspaceName = workspace?.name || "Workspace";
+  const workspaceName = workspace || "Workspace";
 
   return (
     <div className="flex h-screen bg-[#0D0E12] text-white">

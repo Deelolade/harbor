@@ -41,7 +41,7 @@ export const boardService = {
     });
   },
 
-  /** List boards for a project */
+  /** List boards for a project — card-level data only (lightweight) */
   async listByProject(projectId: string) {
     return prisma.board.findMany({
       where: { projectId },
@@ -52,25 +52,12 @@ export const boardService = {
             tasks: {
               orderBy: { order: "asc" },
               include: {
+                // Card-level data: what's shown on the board card
                 subtasks: { orderBy: { order: "asc" } },
-                assignee: {
-                  select: { id: true, name: true, email: true, image: true },
-                },
-                createdBy: {
-                  select: { id: true, name: true, email: true, image: true },
-                },
-                updatedBy: {
-                  select: { id: true, name: true, email: true, image: true },
-                },
+                assignee: { select: { id: true, name: true, image: true } },
                 labels: true,
-                attachments: true,
-                comments: {
-                  orderBy: { createdAt: "asc" },
-                  include: {
-                    author: { select: { id: true, name: true, image: true } },
-                  },
-                },
-                column: { select: { id: true, name: true, boardId: true } },
+                // Counts only — no body data
+                _count: { select: { comments: true, attachments: true } },
               },
             },
           },

@@ -1,21 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
 import { prisma } from "../../lib/prisma.js";
 import { workspaceService } from "./workspace.service.js";
+import { projectService } from "./project.service.js";
 import { boardService } from "./board.service.js";
 import { taskService } from "./task.service.js";
+import { getSessionUser } from "../../lib/session.js";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
   MoveTaskInput,
 } from "./task.service.js";
-
-async function getSessionUser(request: FastifyRequest) {
-  const session = await auth.api.getSession({
-    headers: request.headers as HeadersInit,
-  });
-  return session?.user ?? null;
-}
 
 export async function taskRoutes(fastify: FastifyInstance) {
   // ── Create task ──
@@ -26,18 +20,18 @@ export async function taskRoutes(fastify: FastifyInstance) {
       if (!user) return reply.status(401).send({ message: "Unauthorized" });
 
       const { columnId } = request.params as { columnId: string };
-      const board = await boardService.getById(
-        (
-          await prisma.column.findUnique({
-            where: { id: columnId },
-            select: { boardId: true },
-          })
-        )?.boardId || "",
-      );
-      if (!board)
+      // Single query: column → board → project → workspaceId
+      const column = await prisma.column.findUnique({
+        where: { id: columnId },
+        include: {
+          board: { include: { project: { select: { workspaceId: true } } } },
+        },
+      });
+      if (!column)
         return reply.status(404).send({ message: "Column not found." });
+
       const member = await workspaceService.getMember(
-        board.project.workspaceId,
+        column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });
@@ -70,9 +64,8 @@ export async function taskRoutes(fastify: FastifyInstance) {
       const task = await taskService.getById(id);
       if (!task) return reply.status(404).send({ message: "Task not found." });
 
-      const board = await boardService.getById(task.column.boardId);
       const member = await workspaceService.getMember(
-        board!.project.workspaceId,
+        task.column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });
@@ -110,9 +103,8 @@ export async function taskRoutes(fastify: FastifyInstance) {
       const task = await taskService.getById(id);
       if (!task) return reply.status(404).send({ message: "Task not found." });
 
-      const board = await boardService.getById(task.column.boardId);
       const member = await workspaceService.getMember(
-        board!.project.workspaceId,
+        task.column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });
@@ -137,9 +129,8 @@ export async function taskRoutes(fastify: FastifyInstance) {
       const task = await taskService.getById(id);
       if (!task) return reply.status(404).send({ message: "Task not found." });
 
-      const board = await boardService.getById(task.column.boardId);
       const member = await workspaceService.getMember(
-        board!.project.workspaceId,
+        task.column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });

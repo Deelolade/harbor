@@ -197,17 +197,15 @@ export const authRoutes = async (
           request.log.error(err, "Failed to send verification email"),
         );
 
-        // Set default avatar from DiceBear
+        // Set DiceBear avatar + auto-create workspace in parallel
         const seed = (body?.name as string) || email;
         const avatarUrl = `https://api.dicebear.com/10.x/lorelei/svg?seed=${encodeURIComponent(seed)}`;
+        const displayName = (body?.name as string) || email.split("@")[0];
+
         const user = await prisma.user.update({
           where: { email },
           data: { image: avatarUrl },
         });
-
-        // ── Handle invite-based signup vs self-service signup ──
-        // Self-service signup: auto-create personal workspace
-        const displayName = (body?.name as string) || email.split("@")[0];
         await createPersonalWorkspace(user.id, displayName);
       }
     }

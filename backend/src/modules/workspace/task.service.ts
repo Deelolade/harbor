@@ -34,7 +34,14 @@ const taskInclude = {
     orderBy: { createdAt: "asc" as const },
     include: { author: { select: { id: true, name: true, image: true } } },
   },
-  column: { select: { id: true, name: true, boardId: true } },
+  column: {
+    select: {
+      id: true,
+      name: true,
+      boardId: true,
+      board: { select: { project: { select: { workspaceId: true } } } },
+    },
+  },
 };
 
 export const taskService = {

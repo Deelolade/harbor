@@ -61,15 +61,24 @@ export async function subtaskRoutes(fastify: FastifyInstance) {
       const subtask = await prisma.subtask.findUnique({
         where: { id },
         include: {
-          task: { include: { column: { select: { boardId: true } } } },
+          task: {
+            include: {
+              column: {
+                include: {
+                  board: {
+                    include: { project: { select: { workspaceId: true } } },
+                  },
+                },
+              },
+            },
+          },
         },
       });
       if (!subtask)
         return reply.status(404).send({ message: "Subtask not found." });
 
-      const board = await boardService.getById(subtask.task.column.boardId);
       const member = await workspaceService.getMember(
-        board!.project.workspaceId,
+        subtask.task.column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });
@@ -100,15 +109,24 @@ export async function subtaskRoutes(fastify: FastifyInstance) {
       const subtask = await prisma.subtask.findUnique({
         where: { id },
         include: {
-          task: { include: { column: { select: { boardId: true } } } },
+          task: {
+            include: {
+              column: {
+                include: {
+                  board: {
+                    include: { project: { select: { workspaceId: true } } },
+                  },
+                },
+              },
+            },
+          },
         },
       });
       if (!subtask)
         return reply.status(404).send({ message: "Subtask not found." });
 
-      const board = await boardService.getById(subtask.task.column.boardId);
       const member = await workspaceService.getMember(
-        board!.project.workspaceId,
+        subtask.task.column.board.project.workspaceId,
         user.id,
       );
       if (!member) return reply.status(403).send({ message: "Not a member." });
