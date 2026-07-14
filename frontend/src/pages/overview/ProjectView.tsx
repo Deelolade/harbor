@@ -9,6 +9,7 @@ import {
   FiTrash2,
   FiCalendar,
   FiMessageSquare,
+  FiPaperclip,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import TaskModal from "../../components/workspace/TaskModal";
@@ -293,96 +294,106 @@ export default function ProjectView() {
               </div>
               <div className="flex-1 space-y-2 p-3 overflow-y-auto">
                 {col.tasks?.map((task) => {
-                  const completedSubtasks = task.subtasks.filter(
-                    (s) => s.completed,
-                  ).length;
-                  const totalSubtasks = task.subtasks.length;
-                  const isOverdue =
+                  const done = task.subtasks.filter((s) => s.completed).length;
+                  const total = task.subtasks.length;
+                  const overdue =
                     task.dueDate && new Date(task.dueDate) < new Date();
+                  const soon =
+                    task.dueDate &&
+                    !overdue &&
+                    new Date(task.dueDate).getTime() - Date.now() <
+                      3 * 24 * 60 * 60 * 1000;
+                  const visLabels = task.labels?.slice(0, 3) || [];
+                  const overflow = (task.labels?.length || 0) - 3;
+                  const strip =
+                    priorityColors[task.priority] || priorityColors.MEDIUM;
+
                   return (
                     <div
                       key={task.id}
                       onClick={() => setSelectedTask(task)}
-                      className="group cursor-pointer rounded-lg border border-white/[0.04] bg-[#0D0E12] p-3 hover:border-white/[0.08] transition-colors"
+                      className="group relative cursor-pointer rounded-lg border border-white/[0.04] bg-[#0D0E12] pl-[6px] hover:border-white/[0.08] hover:-translate-y-px hover:shadow-lg hover:shadow-black/20 transition-all duration-150"
                     >
-                      {task.labels && task.labels.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {task.labels.map((l) => (
-                            <span
-                              key={l.id}
-                              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-                              style={{ backgroundColor: l.color }}
-                            >
-                              {l.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-start gap-2">
-                        <span
-                          className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${priorityColors[task.priority] || priorityColors.MEDIUM}`}
-                        />
-                        <span className="flex-1 text-[13px] text-zinc-300 leading-snug">
-                          {task.title}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTask.mutate(task.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 rounded p-0.5 text-zinc-600 hover:text-red-400 transition-opacity"
-                        >
-                          <FiTrash2 size={12} />
-                        </button>
-                      </div>
-                      {task.description && (
-                        <p className="mt-1 text-[12px] text-zinc-500 line-clamp-1 leading-relaxed">
-                          {task.description}
-                        </p>
-                      )}
-                      {totalSubtasks > 0 && (
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <div className="flex-1 h-1 rounded-full bg-white/[0.04] overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${completedSubtasks === totalSubtasks ? "bg-emerald-500" : "bg-amber-500/60"}`}
-                              style={{
-                                width: `${Math.round((completedSubtasks / totalSubtasks) * 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-[11px] text-zinc-600">
-                            {completedSubtasks}/{totalSubtasks}
-                          </span>
-                        </div>
-                      )}
-                      <div className="mt-2 flex items-center justify-between">
-                        {task.dueDate ? (
-                          <span
-                            className={`flex items-center gap-1 text-[11px] ${isOverdue ? "text-red-400" : "text-zinc-500"}`}
-                          >
-                            <FiCalendar size={11} />
-                            {new Date(task.dueDate).toLocaleDateString(
-                              "en-US",
-                              { month: "short", day: "numeric" },
+                      <div
+                        className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${strip}`}
+                      />
+                      <div className="p-2.5 pl-2">
+                        {visLabels.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-1.5">
+                            {visLabels.map((l) => (
+                              <span
+                                key={l.id}
+                                className="rounded px-1.5 py-px text-[10px] font-medium text-white"
+                                style={{ backgroundColor: l.color }}
+                              >
+                                {l.name}
+                              </span>
+                            ))}
+                            {overflow > 0 && (
+                              <span className="rounded px-1.5 py-px text-[10px] font-medium text-zinc-500 bg-white/[0.04]">
+                                +{overflow}
+                              </span>
                             )}
-                          </span>
-                        ) : (
-                          <span />
+                          </div>
                         )}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-1.5">
+                          <span className="flex-1 text-[13px] text-zinc-300 leading-snug line-clamp-2">
+                            {task.title}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteTask.mutate(task.id);
+                            }}
+                            className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 rounded p-0.5 text-zinc-600 hover:text-red-400 transition-opacity"
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2 text-[11px] text-zinc-600">
+                          {total > 0 && (
+                            <span
+                              className={
+                                done === total ? "text-emerald-500" : ""
+                              }
+                            >
+                              {done}/{total}
+                            </span>
+                          )}
+                          {task.dueDate && (overdue || soon) && (
+                            <span
+                              className={`flex items-center gap-0.5 ${overdue ? "text-red-400" : "text-amber-400"}`}
+                            >
+                              <FiCalendar size={10} />
+                              {new Date(task.dueDate).toLocaleDateString(
+                                "en-US",
+                                { month: "short", day: "numeric" },
+                              )}
+                            </span>
+                          )}
+                          {task.attachments && task.attachments.length > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <FiPaperclip size={10} />
+                              {task.attachments.length}
+                            </span>
+                          )}
                           {task.comments && task.comments.length > 0 && (
-                            <span className="flex items-center gap-1 text-[11px] text-zinc-600">
-                              <FiMessageSquare size={11} />
+                            <span className="flex items-center gap-0.5">
+                              <FiMessageSquare size={10} />
                               {task.comments.length}
                             </span>
                           )}
-                          {task.assignee && (
+                          <span className="flex-1" />
+                          {task.assignee ? (
                             <img
-                              src={task.assignee.image || ""}
-                              alt={task.assignee.name || ""}
-                              className="h-5 w-5 rounded-full bg-white/[0.06]"
+                              src={task.assignee.image}
+                              className="h-[18px] w-[18px] rounded-full"
                               title={task.assignee.name}
                             />
+                          ) : (
+                            <span className="h-[18px] w-[18px] rounded-full bg-white/[0.06] flex items-center justify-center text-[9px]">
+                              U
+                            </span>
                           )}
                         </div>
                       </div>
@@ -521,8 +532,7 @@ export default function ProjectView() {
               <div>
                 <h3 className="text-lg font-semibold">Delete board</h3>
                 <p className="text-sm text-zinc-500">
-                  This will permanently delete "{deleteTarget.name}" and all its
-                  columns.
+                  This will permanently delete "{deleteTarget.name}".
                 </p>
               </div>
             </div>
