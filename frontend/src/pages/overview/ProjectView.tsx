@@ -130,6 +130,8 @@ export default function ProjectView() {
     id: string;
     name: string;
   } | null>(null);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const suggestedColumns = ["Backlog", "Review"];
   const board = boards.find((b) => b.id === activeBoard) || boards[0];
@@ -220,6 +222,53 @@ export default function ProjectView() {
     onError: () => toast.error("Failed to delete task."),
   });
 
+  const moveTask = useMutation({
+    mutationFn: async ({
+      taskId,
+      columnId,
+      order,
+    }: {
+      taskId: string;
+      columnId: string;
+      order: number;
+    }) => {
+      await fetch(`${API_URL}/api/tasks/${taskId}/move`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ columnId, order }),
+        credentials: "include",
+      });
+    },
+    onSuccess: () => invalidate(),
+    onError: () => toast.error("Failed to move task."),
+  });
+
+  // ── Drag & Drop ──
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    setDragOverCol(null);
+    setDragOverIdx(null);
+  };
+  const handleDragOverCol = (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    setDragOverCol(colId);
+  };
+  const handleDrop = (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    if (!draggedTask) return;
+    const target = board?.columns.find((c) => c.id === colId);
+    moveTask.mutate({
+      taskId: draggedTask.id,
+      columnId: colId,
+      order: (target?.tasks?.length || 0) + 1,
+    });
+    handleDragEnd();
+  };
+
   if (isLoading)
     return (
       <div className="flex justify-center py-20">
@@ -292,7 +341,11 @@ export default function ProjectView() {
                   <FiPlus size={14} />
                 </button>
               </div>
-              <div className="flex-1 space-y-2 p-3 overflow-y-auto">
+              <div
+                className={`flex-1 space-y-2 p-3 overflow-y-auto transition-colors ${dragOverCol === col.id ? "bg-amber-500/5" : ""}`}
+                onDragOver={(e) => handleDragOverCol(e, col.id)}
+                onDrop={(e) => handleDrop(e, col.id)}
+              >
                 {col.tasks?.map((task) => {
                   const done = task.subtasks.filter((s) => s.completed).length;
                   const total = task.subtasks.length;
@@ -311,8 +364,15 @@ export default function ProjectView() {
                   return (
                     <div
                       key={task.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task)}
+                      onDragEnd={handleDragEnd}
                       onClick={() => setSelectedTask(task)}
-                      className="group relative cursor-pointer rounded-lg border border-white/[0.04] bg-[#0D0E12] pl-[6px] hover:border-white/[0.08] hover:-translate-y-px hover:shadow-lg hover:shadow-black/20 transition-all duration-150"
+                      className={`group relative cursor-grab active:cursor-grabbing rounded-lg border bg-[#0D0E12] pl-[6px] transition-all duration-150 ${
+                        draggedTask?.id === task.id
+                          ? "opacity-40 border-white/[0.08]"
+                          : "border-white/[0.04] hover:border-white/[0.08] hover:-translate-y-px hover:shadow-lg hover:shadow-black/20"
+                      }`}
                     >
                       <div
                         className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${strip}`}
