@@ -7,13 +7,19 @@ import {
   FiFolder,
   FiChevronRight,
   FiTrash2,
-  FiCalendar,
-  FiMessageSquare,
-  FiPaperclip,
 } from "react-icons/fi";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { toast } from "sonner";
 import TaskModal from "../../components/workspace/TaskModal";
 import TaskCreateModal from "../../components/workspace/TaskCreateModal";
+import KanbanColumn from "../../components/workspace/KanbanColumn";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -78,13 +84,6 @@ interface Member {
   user: { id: string; name: string; email: string; image?: string };
 }
 
-const priorityColors: Record<string, string> = {
-  URGENT: "bg-red-500",
-  HIGH: "bg-amber-500",
-  MEDIUM: "bg-blue-500",
-  LOW: "bg-zinc-500",
-};
-
 async function fetchBoards(projectId: string): Promise<Board[]> {
   const res = await fetch(`${API_URL}/api/projects/${projectId}/boards`, {
     credentials: "include",
@@ -130,8 +129,10 @@ export default function ProjectView() {
     id: string;
     name: string;
   } | null>(null);
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
   const suggestedColumns = ["Backlog", "Review"];
   const board = boards.find((b) => b.id === activeBoard) || boards[0];
@@ -243,30 +244,18 @@ export default function ProjectView() {
     onError: () => toast.error("Failed to move task."),
   });
 
-  // ── Drag & Drop ──
-  const handleDragStart = (e: React.DragEvent, task: Task) => {
-    setDraggedTask(task);
-    e.dataTransfer.effectAllowed = "move";
-  };
-  const handleDragEnd = () => {
-    setDraggedTask(null);
-    setDragOverCol(null);
-    setDragOverIdx(null);
-  };
-  const handleDragOverCol = (e: React.DragEvent, colId: string) => {
-    e.preventDefault();
-    setDragOverCol(colId);
-  };
-  const handleDrop = (e: React.DragEvent, colId: string) => {
-    e.preventDefault();
-    if (!draggedTask) return;
-    const target = board?.columns.find((c) => c.id === colId);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const overCol =
+      board?.columns.find((c) => c.id === over.id) ||
+      board?.columns.find((c) => c.tasks?.some((t) => t.id === over.id));
+    if (!overCol) return;
     moveTask.mutate({
-      taskId: draggedTask.id,
-      columnId: colId,
-      order: (target?.tasks?.length || 0) + 1,
+      taskId: String(active.id),
+      columnId: overCol.id,
+      order: overCol.tasks?.length || 0,
     });
-    handleDragEnd();
   };
 
   if (isLoading)
@@ -317,222 +306,86 @@ export default function ProjectView() {
       </div>
 
       {board ? (
-        <div className="flex flex-1 gap-4 overflow-x-auto p-6">
-          {board.columns.map((col) => (
-            <div
-              key={col.id}
-              className="flex w-72 shrink-0 flex-col rounded-xl bg-[#111318] border border-white/[0.04]"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-zinc-300">
-                    {col.name}
-                  </span>
-                  <span className="rounded bg-white/[0.04] px-1.5 py-0.5 text-[11px] text-zinc-600">
-                    {col.tasks?.length || 0}
-                  </span>
-                </div>
-                <button
-                  onClick={() =>
-                    setCreatingInColumn({ id: col.id, name: col.name })
-                  }
-                  className="rounded p-1 text-zinc-600 hover:bg-white/[0.06] hover:text-zinc-400"
-                >
-                  <FiPlus size={14} />
-                </button>
-              </div>
-              <div
-                className={`flex-1 space-y-2 p-3 overflow-y-auto transition-colors ${dragOverCol === col.id ? "bg-amber-500/5" : ""}`}
-                onDragOver={(e) => handleDragOverCol(e, col.id)}
-                onDrop={(e) => handleDrop(e, col.id)}
-              >
-                {col.tasks?.map((task) => {
-                  const done = task.subtasks.filter((s) => s.completed).length;
-                  const total = task.subtasks.length;
-                  const overdue =
-                    task.dueDate && new Date(task.dueDate) < new Date();
-                  const soon =
-                    task.dueDate &&
-                    !overdue &&
-                    new Date(task.dueDate).getTime() - Date.now() <
-                      3 * 24 * 60 * 60 * 1000;
-                  const visLabels = task.labels?.slice(0, 3) || [];
-                  const overflow = (task.labels?.length || 0) - 3;
-                  const strip =
-                    priorityColors[task.priority] || priorityColors.MEDIUM;
-
-                  return (
-                    <div
-                      key={task.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, task)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => setSelectedTask(task)}
-                      className={`group relative cursor-grab active:cursor-grabbing rounded-lg border bg-[#0D0E12] pl-[6px] transition-all duration-150 ${
-                        draggedTask?.id === task.id
-                          ? "opacity-40 border-white/[0.08]"
-                          : "border-white/[0.04] hover:border-white/[0.08] hover:-translate-y-px hover:shadow-lg hover:shadow-black/20"
-                      }`}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex flex-1 gap-4 overflow-x-auto p-6">
+            {board.columns.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                column={col}
+                onSelectTask={(t) => setSelectedTask(t as any)}
+                onDeleteTask={(id) => deleteTask.mutate(id)}
+                onAddTask={() =>
+                  setCreatingInColumn({ id: col.id, name: col.name })
+                }
+              />
+            ))}
+            <div className="flex items-start gap-2">
+              {showNewCol === board.id ? (
+                <div className="flex w-64 shrink-0 flex-col gap-2 rounded-xl bg-[#111318] border border-white/[0.04] p-3">
+                  <input
+                    value={newColName}
+                    onChange={(e) => setNewColName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        createColumn.mutate({
+                          boardId: board.id,
+                          name: newColName,
+                        });
+                      if (e.key === "Escape") setShowNewCol(null);
+                    }}
+                    autoFocus
+                    placeholder="Column name"
+                    className="h-[40px] w-full rounded-lg border border-[#1F1F23] bg-[#0D0E12] px-3 text-[14px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        createColumn.mutate({
+                          boardId: board.id,
+                          name: newColName,
+                        })
+                      }
+                      disabled={!newColName.trim()}
+                      className="flex-1 rounded-lg bg-amber-500 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-40"
                     >
-                      <div
-                        className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${strip}`}
-                      />
-                      <div className="p-2.5 pl-2">
-                        {visLabels.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-1.5">
-                            {visLabels.map((l) => (
-                              <span
-                                key={l.id}
-                                className="rounded px-1.5 py-px text-[10px] font-medium text-white"
-                                style={{ backgroundColor: l.color }}
-                              >
-                                {l.name}
-                              </span>
-                            ))}
-                            {overflow > 0 && (
-                              <span className="rounded px-1.5 py-px text-[10px] font-medium text-zinc-500 bg-white/[0.04]">
-                                +{overflow}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <div className="flex items-start gap-1.5">
-                          <span className="flex-1 text-[13px] text-zinc-300 leading-snug line-clamp-2">
-                            {task.title}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteTask.mutate(task.id);
-                            }}
-                            className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 rounded p-0.5 text-zinc-600 hover:text-red-400 transition-opacity"
-                          >
-                            <FiTrash2 size={12} />
-                          </button>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 text-[11px] text-zinc-600">
-                          {total > 0 && (
-                            <span
-                              className={
-                                done === total ? "text-emerald-500" : ""
-                              }
-                            >
-                              {done}/{total}
-                            </span>
-                          )}
-                          {task.dueDate && (overdue || soon) && (
-                            <span
-                              className={`flex items-center gap-0.5 ${overdue ? "text-red-400" : "text-amber-400"}`}
-                            >
-                              <FiCalendar size={10} />
-                              {new Date(task.dueDate).toLocaleDateString(
-                                "en-US",
-                                { month: "short", day: "numeric" },
-                              )}
-                            </span>
-                          )}
-                          {task.attachments && task.attachments.length > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <FiPaperclip size={10} />
-                              {task.attachments.length}
-                            </span>
-                          )}
-                          {task.comments && task.comments.length > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <FiMessageSquare size={10} />
-                              {task.comments.length}
-                            </span>
-                          )}
-                          <span className="flex-1" />
-                          {task.assignee ? (
-                            <img
-                              src={task.assignee.image}
-                              className="h-[18px] w-[18px] rounded-full"
-                              title={task.assignee.name}
-                            />
-                          ) : (
-                            <span className="h-[18px] w-[18px] rounded-full bg-white/[0.06] flex items-center justify-center text-[9px]">
-                              U
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={() =>
-                    setCreatingInColumn({ id: col.id, name: col.name })
-                  }
-                  className="flex w-full items-center gap-1.5 rounded-lg border border-dashed border-zinc-800 px-3 py-2 text-[12px] text-zinc-600 hover:border-zinc-700 hover:text-zinc-400 transition-colors"
-                >
-                  <FiPlus size={12} /> Add task
-                </button>
-              </div>
-            </div>
-          ))}
-          <div className="flex items-start gap-2">
-            {showNewCol === board.id ? (
-              <div className="flex w-64 shrink-0 flex-col gap-2 rounded-xl bg-[#111318] border border-white/[0.04] p-3">
-                <input
-                  value={newColName}
-                  onChange={(e) => setNewColName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter")
-                      createColumn.mutate({
-                        boardId: board.id,
-                        name: newColName,
-                      });
-                    if (e.key === "Escape") setShowNewCol(null);
-                  }}
-                  autoFocus
-                  placeholder="Column name"
-                  className="h-[40px] w-full rounded-lg border border-[#1F1F23] bg-[#0D0E12] px-3 text-[14px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none"
-                />
-                <div className="flex gap-2">
+                      Add
+                    </button>
+                    <button
+                      onClick={() => setShowNewCol(null)}
+                      className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {suggestedColumns.map((col) => (
+                    <button
+                      key={col}
+                      onClick={() =>
+                        createColumn.mutate({ boardId: board.id, name: col })
+                      }
+                      className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-xs text-zinc-500 hover:border-zinc-500 hover:text-zinc-400 transition-colors"
+                    >
+                      <FiPlus size={12} /> {col}
+                    </button>
+                  ))}
                   <button
-                    onClick={() =>
-                      createColumn.mutate({
-                        boardId: board.id,
-                        name: newColName,
-                      })
-                    }
-                    disabled={!newColName.trim()}
-                    className="flex-1 rounded-lg bg-amber-500 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-40"
+                    onClick={() => setShowNewCol(board.id)}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/[0.04] px-3 py-2 text-xs text-zinc-600 hover:border-white/[0.08] hover:text-zinc-400 transition-colors"
                   >
-                    Add
-                  </button>
-                  <button
-                    onClick={() => setShowNewCol(null)}
-                    className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
-                  >
-                    <FiX size={14} />
+                    <FiPlus size={12} /> Add column
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {suggestedColumns.map((col) => (
-                  <button
-                    key={col}
-                    onClick={() =>
-                      createColumn.mutate({ boardId: board.id, name: col })
-                    }
-                    className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-xs text-zinc-500 hover:border-zinc-500 hover:text-zinc-400 transition-colors"
-                  >
-                    <FiPlus size={12} /> {col}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setShowNewCol(board.id)}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/[0.04] px-3 py-2 text-xs text-zinc-600 hover:border-white/[0.08] hover:text-zinc-400 transition-colors"
-                >
-                  <FiPlus size={12} /> Add column
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </DndContext>
       ) : (
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
