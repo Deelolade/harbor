@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { workspaceService } from "./workspace.service.js";
-import { projectService } from "./project.service.js";
+import { auth } from "@/lib/auth.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { projectService } from "@/modules/workspace/project.service.js";
 import type {
   CreateProjectInput,
   UpdateProjectInput,
-} from "./project.service.js";
+} from "@/modules/workspace/project.service.js";
 
 async function getSessionUser(request: FastifyRequest) {
   const session = await auth.api.getSession({
@@ -53,11 +53,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
         visibility &&
         !["PRIVATE", "WORKSPACE", "PUBLIC"].includes(visibility)
       ) {
-        return reply
-          .status(400)
-          .send({
-            message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
-          });
+        return reply.status(400).send({
+          message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
+        });
       }
 
       const project = await projectService.create(id, user.id, {
@@ -144,11 +142,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
         member.role === "ADMIN" ||
         project.createdById === user.id;
       if (!canManage) {
-        return reply
-          .status(403)
-          .send({
-            message: "You don't have permission to update this project.",
-          });
+        return reply.status(403).send({
+          message: "You don't have permission to update this project.",
+        });
       }
 
       const { name, description, image, visibility } =
@@ -167,11 +163,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
         visibility &&
         !["PRIVATE", "WORKSPACE", "PUBLIC"].includes(visibility)
       ) {
-        return reply
-          .status(400)
-          .send({
-            message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
-          });
+        return reply.status(400).send({
+          message: "Visibility must be PRIVATE, WORKSPACE, or PUBLIC.",
+        });
       }
 
       const updated = await projectService.update(id, {
@@ -213,11 +207,9 @@ export async function projectRoutes(fastify: FastifyInstance) {
         member.role === "ADMIN" ||
         project.createdById === user.id;
       if (!canManage) {
-        return reply
-          .status(403)
-          .send({
-            message: "You don't have permission to delete this project.",
-          });
+        return reply.status(403).send({
+          message: "You don't have permission to delete this project.",
+        });
       }
 
       await projectService.delete(id);

@@ -1,13 +1,13 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { prisma } from "../../lib/prisma.js";
+import { auth } from "@/lib/auth.js";
+import { prisma } from "@/lib/prisma.js";
 import {
   invitationService,
   AlreadyMemberError,
   InvitationError,
-} from "./invitation.service.js";
-import type { CreateInvitationInput } from "./invitation.service.js";
-import { workspaceService } from "./workspace.service.js";
+} from "@/modules/workspace/invitation.service.js";
+import type { CreateInvitationInput } from "@/modules/workspace/invitation.service.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
 
 // ── Helpers ──
 
@@ -29,7 +29,9 @@ async function requireManageAccess(
 ) {
   const member = await workspaceService.getMember(workspaceId, userId);
   if (!member) {
-    reply.status(403).send({ message: "You are not a member of this workspace." });
+    reply
+      .status(403)
+      .send({ message: "You are not a member of this workspace." });
     return null;
   }
   if (!canManage(member.role)) {
@@ -59,7 +61,9 @@ export async function invitationRoutes(fastify: FastifyInstance) {
 
       const { email, role } = request.body as CreateInvitationInput;
       if (!email || typeof email !== "string" || !email.includes("@")) {
-        return reply.status(400).send({ message: "A valid email is required." });
+        return reply
+          .status(400)
+          .send({ message: "A valid email is required." });
       }
 
       // Validate role if provided

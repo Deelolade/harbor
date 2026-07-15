@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "@/lib/prisma.js";
 
 export interface CreateSubtaskInput {
   title: string;
@@ -28,7 +28,9 @@ export const subtaskService = {
       where: { id: subtaskId },
       data: {
         ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-        ...(input.completed !== undefined ? { completed: input.completed } : {}),
+        ...(input.completed !== undefined
+          ? { completed: input.completed }
+          : {}),
       },
     });
   },

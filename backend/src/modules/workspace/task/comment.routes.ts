@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { prisma } from "../../lib/prisma.js";
-import { workspaceService } from "../workspace.service.js";
-import { commentService } from "./comment.service.js";
+import { auth } from "@/lib/auth.js";
+import { prisma } from "@/lib/prisma.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { commentService } from "@/modules/workspace/task/comment.service.js";
 
 async function getSessionUser(request: FastifyRequest) {
   const session = await auth.api.getSession({

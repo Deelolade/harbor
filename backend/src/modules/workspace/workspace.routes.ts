@@ -1,15 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { workspaceService } from "./workspace.service.js";
-import { sendInviteEmail } from "../../utils/email.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { sendInviteEmail } from "@/utils/email.js";
 import crypto from "node:crypto";
-import { prisma } from "../../lib/prisma.js";
-import { getSessionUser } from "../../lib/session.js";
+import { prisma } from "@/lib/prisma.js";
+import { getSessionUser } from "@/lib/session.js";
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   AddMemberInput,
   UpdateMemberInput,
-} from "./workspace.service.js";
+} from "@/modules/workspace/workspace.service.js";
 
 // ── Helpers ──
 
@@ -124,6 +124,38 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
       return reply.send({ name: ws.name });
     },
   );
+
+  // ── Unseen activity count ──
+  fastify.get("/api/workspaces/:id/activity/unseen", async (request, reply) => {
+    const user = await getSessionUser(request);
+    if (!user) return reply.status(401).send({ message: "Unauthorized" });
+    const { id } = request.params as { id: string };
+    const member = await workspaceService.getMember(id, user.id);
+    if (!member) return reply.status(403).send({ message: "Not a member." });
+    const count = await prisma.activity.count({
+      where: {
+        workspaceId: id,
+        ...(member.lastViewedActivity
+          ? { createdAt: { gt: member.lastViewedActivity } }
+          : {}),
+      },
+    });
+    return reply.send({ unseen: count });
+  });
+
+  // ── Mark activity as seen ──
+  fastify.post("/api/workspaces/:id/activity/seen", async (request, reply) => {
+    const user = await getSessionUser(request);
+    if (!user) return reply.status(401).send({ message: "Unauthorized" });
+    const { id } = request.params as { id: string };
+    const member = await workspaceService.getMember(id, user.id);
+    if (!member) return reply.status(403).send({ message: "Not a member." });
+    await prisma.workspaceMember.update({
+      where: { id: member.id },
+      data: { lastViewedActivity: new Date() },
+    });
+    return reply.send({ ok: true });
+  });
 
   // ── Update workspace ──
   fastify.put(

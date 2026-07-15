@@ -1,14 +1,14 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { prisma } from "../../lib/prisma.js";
-import { workspaceService } from "../workspace.service.js";
-import { boardService } from "../board/board.service.js";
-import { taskService } from "./task.service.js";
-import { subtaskService } from "./subtask.service.js";
+import { auth } from "@/lib/auth.js";
+import { prisma } from "@/lib/prisma.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { boardService } from "@/modules/workspace/board/board.service.js";
+import { taskService } from "@/modules/workspace/task/task.service.js";
+import { subtaskService } from "@/modules/workspace/task/subtask.service.js";
 import type {
   CreateSubtaskInput,
   UpdateSubtaskInput,
-} from "./subtask.service.js";
+} from "@/modules/workspace/task/subtask.service.js";
 
 async function getSessionUser(request: FastifyRequest) {
   const session = await auth.api.getSession({

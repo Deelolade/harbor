@@ -5,6 +5,7 @@ import { FiChevronRight } from "react-icons/fi";
 import Sidebar from "../../components/workspace/Sidebar";
 import ProfileModal from "../../components/workspace/ProfileModal";
 import { authClient } from "../../lib/auth-client";
+import { useActivityStream } from "../../hooks/use-activity-stream";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -26,6 +27,9 @@ export default function WorkspaceLayout() {
   });
 
   const workspaceName = workspace || "Workspace";
+
+  // Activate real-time activity stream for this workspace
+  useActivityStream(workspaceId);
 
   return (
     <div className="flex h-screen bg-[#0D0E12] text-white">

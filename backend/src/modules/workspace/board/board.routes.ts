@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { workspaceService } from "../workspace.service.js";
-import { boardService } from "./board.service.js";
+import { auth } from "@/lib/auth.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { boardService } from "@/modules/workspace/board/board.service.js";
 import type {
   CreateBoardInput,
   UpdateBoardInput,

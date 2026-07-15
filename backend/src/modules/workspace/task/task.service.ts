@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "@/lib/prisma.js";
 import type { Priority } from "../../generated/prisma/client/index.js";
 
 export interface CreateTaskInput {

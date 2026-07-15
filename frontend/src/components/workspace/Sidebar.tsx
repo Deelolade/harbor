@@ -3,11 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   FiHome,
-  FiInbox,
-  FiCheckSquare,
+  FiActivity,
   FiFolder,
   FiUsers,
-  FiEye,
   FiSettings,
   FiChevronLeft,
   FiChevronRight,
@@ -76,6 +74,36 @@ export default function Sidebar({
     staleTime: 30_000,
   });
 
+  const { data: activityCount = 0 } = useQuery<number>({
+    queryKey: ["activity", workspaceId],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/activity`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : [])),
+    enabled: !!workspaceId,
+    select: (data: any[]) => data.length,
+    staleTime: 10_000,
+  });
+
+  const { data: unseen = 0 } = useQuery({
+    queryKey: ["activity-unseen", workspaceId],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/unseen`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : { unseen: 0 })),
+    enabled: !!workspaceId,
+    select: (data: any) => data?.unseen ?? 0,
+    refetchInterval: 15_000,
+  });
+
+  const handleActivityClick = () => {
+    fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/seen`, {
+      method: "POST",
+      credentials: "include",
+    });
+    navigate(`${basePath}/activity`);
+  };
+
   const handleSignOut = async () => {
     await authClient.signOut();
     navigate("/sign-in");
@@ -86,7 +114,14 @@ export default function Sidebar({
   const navItems = [
     { icon: <FiHome size={15} />, label: "Home", path: basePath },
     // { icon: <FiInbox size={15} />, label: "Inbox", path: `${basePath}/inbox`, badge: "3" },
-    // { icon: <FiCheckSquare size={15} />, label: "My tasks", path: `${basePath}/tasks`, badge: "7" },
+    {
+      icon: <FiActivity size={15} />,
+      label: "Activity",
+      path: `${basePath}/activity`,
+      badge: unseen > 0 ? String(unseen) : undefined,
+      badgeColor: unseen > 0 ? "bg-blue-500 text-white" : undefined,
+      onClick: handleActivityClick,
+    },
     {
       icon: <FiUsers size={15} />,
       label: "Members",
@@ -259,9 +294,9 @@ export default function Sidebar({
           />
         )}
 
-        {navItems.map((item) => (
+        {navItems.map((item, idx) => (
           <SidebarItem
-            key={item.label}
+            key={item.label || idx}
             icon={item.icon}
             label={item.label}
             badge={item.badge}
@@ -316,6 +351,7 @@ function SidebarItem({
   icon,
   label,
   badge,
+  badgeColor,
   collapsed,
   active,
   onClick,
@@ -323,6 +359,7 @@ function SidebarItem({
   icon: React.ReactNode;
   label: string;
   badge?: string;
+  badgeColor?: string;
   collapsed: boolean;
   active?: boolean;
   onClick?: () => void;
@@ -344,7 +381,9 @@ function SidebarItem({
         <>
           <span className="flex-1 text-left">{label}</span>
           {badge && (
-            <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-zinc-500">
+            <span
+              className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeColor || "bg-white/[0.06] text-zinc-500"}`}
+            >
               {badge}
             </span>
           )}

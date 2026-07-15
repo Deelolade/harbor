@@ -1,9 +1,9 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { auth } from "../../lib/auth.js";
-import { prisma } from "../../lib/prisma.js";
+import { auth } from "@/lib/auth.js";
+import { prisma } from "@/lib/prisma.js";
 import { fromNodeHeaders } from "better-auth/node";
-import { sendVerificationEmail } from "../../utils/email.js";
-import { FRONTEND_URL } from "../../utils/env.js";
+import { sendVerificationEmail } from "@/utils/email.js";
+import { FRONTEND_URL } from "@/utils/env.js";
 import crypto from "node:crypto";
 
 const makeUrl = (path: string) => `${FRONTEND_URL}${path}`;

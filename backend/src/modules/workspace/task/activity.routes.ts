@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "../../lib/prisma.js";
-import { workspaceService } from "../workspace.service.js";
-import { activityService } from "./activity.service.js";
-import { getSessionUser } from "../../lib/session.js";
+import { prisma } from "@/lib/prisma.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { activityService } from "@/modules/workspace/task/activity.service.js";
+import { getSessionUser } from "@/lib/session.js";
 
 export async function activityRoutes(fastify: FastifyInstance) {
   // ── Activity feed ──

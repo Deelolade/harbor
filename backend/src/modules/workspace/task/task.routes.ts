@@ -1,11 +1,12 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "../../lib/prisma.js";
-import { workspaceService } from "../workspace.service.js";
-import { projectService } from "../project.service.js";
-import { boardService } from "../board/board.service.js";
-import { taskService } from "./task.service.js";
-import { getSessionUser } from "../../lib/session.js";
-import { activityService } from "./activity.service.js";
+import { prisma } from "@/lib/prisma.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { projectService } from "@/modules/workspace/project.service.js";
+import { boardService } from "@/modules/workspace/board/board.service.js";
+import { taskService } from "@/modules/workspace/task/task.service.js";
+import { getSessionUser } from "@/lib/session.js";
+import { activityService } from "@/modules/workspace/task/activity.service.js";
+import { publishActivity } from "@/lib/ably.js";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -83,6 +84,14 @@ export async function taskRoutes(fastify: FastifyInstance) {
         })
         .catch(() => {});
 
+      publishActivity(column.board.project.workspaceId, {
+        type: "created_task",
+        actor: { id: user.id, name: user.name || "Someone", image: user.image },
+        targetType: "task",
+        targetId: task.id,
+        metadata: { title: task.title, column: column.name },
+      });
+
       return reply.status(201).send(task);
     },
   );
@@ -138,8 +147,11 @@ export async function taskRoutes(fastify: FastifyInstance) {
       const task = await prisma.task.findUnique({
         where: { id },
         select: {
+          title: true,
+          assigneeId: true,
           column: {
             select: {
+              name: true,
               board: { select: { project: { select: { workspaceId: true } } } },
             },
           },
@@ -169,6 +181,18 @@ export async function taskRoutes(fastify: FastifyInstance) {
           metadata: { toColumnId: columnId },
         })
         .catch(() => {});
+
+      publishActivity(task.column.board.project.workspaceId, {
+        type: "moved_task",
+        actor: { id: user.id, name: user.name || "Someone", image: user.image },
+        targetType: "task",
+        targetId: id,
+        metadata: {
+          toColumnId: columnId,
+          taskTitle: task.title,
+          assigneeId: task.assigneeId,
+        },
+      });
 
       return reply.status(200).send({});
     },

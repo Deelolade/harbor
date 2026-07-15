@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import { prisma } from "@/lib/prisma.js";
 
 const DEFAULT_COLUMNS = ["To Do", "In Progress", "Done"];
 
