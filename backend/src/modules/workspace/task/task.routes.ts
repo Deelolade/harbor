@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../lib/prisma.js";
-import { workspaceService } from "./workspace.service.js";
-import { projectService } from "./project.service.js";
-import { boardService } from "./board.service.js";
+import { workspaceService } from "../workspace.service.js";
+import { projectService } from "../project.service.js";
+import { boardService } from "../board/board.service.js";
 import { taskService } from "./task.service.js";
 import { getSessionUser } from "../../lib/session.js";
 import { activityService } from "./activity.service.js";
@@ -192,6 +192,36 @@ export async function taskRoutes(fastify: FastifyInstance) {
       if (!member) return reply.status(403).send({ message: "Not a member." });
 
       await taskService.delete(id);
+      return reply.status(204).send();
+    },
+  );
+
+  // ── Labels ──
+  fastify.post(
+    "/api/tasks/:taskId/labels",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+      const { taskId } = request.params as { taskId: string };
+      const { name, color } = request.body as { name: string; color?: string };
+      if (!name?.trim())
+        return reply.status(400).send({ message: "Label name required." });
+      return reply.status(201).send(
+        await prisma.taskLabel.create({
+          data: { name: name.trim(), color: color || "#3B82F6", taskId },
+        }),
+      );
+    },
+  );
+
+  fastify.delete(
+    "/api/labels/:labelId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      if (!(await getSessionUser(request)))
+        return reply.status(401).send({ message: "Unauthorized" });
+      await prisma.taskLabel.delete({
+        where: { id: (request.params as { labelId: string }).labelId },
+      });
       return reply.status(204).send();
     },
   );

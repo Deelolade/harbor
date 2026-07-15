@@ -9,6 +9,8 @@ export const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID as string;
 export const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET as string;
 export const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 export const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8800";
+export const ABLY_API_KEY = process.env.ABLY_API_KEY as string;
 
 if (!DATABASE_URL) throw new Error("DATABASE_URL is missing");
 if (!SENDBYTE_SECRET) throw new Error("SENDBYTE_SECRET is missing");
+if (!ABLY_API_KEY) throw new Error("ABLY_API_KEY is missing");
