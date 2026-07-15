@@ -1,9 +1,21 @@
 import { FastifyRequest } from "fastify";
+import { auth } from "./auth.js";
 
-/** Get the current user from the request-scoped cached session.
- *  Uses request.getSession() (set by cachedAuth plugin) which only hits
- *  the DB once per request, even if called multiple times. */
+/**
+ * Get the current user from the request. Uses a WeakMap to cache
+ * the session per-request, so it only hits the DB once.
+ */
+const sessionCache = new WeakMap<FastifyRequest, Promise<any>>();
+
 export async function getSessionUser(request: FastifyRequest) {
-  const session = await request.getSession();
-  return session?.user ?? null;
+  if (sessionCache.has(request)) return sessionCache.get(request)!;
+
+  const promise = auth.api
+    .getSession({
+      headers: request.headers as HeadersInit,
+    })
+    .then((session) => session?.user ?? null);
+
+  sessionCache.set(request, promise);
+  return promise;
 }

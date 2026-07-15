@@ -5,6 +5,7 @@ import { projectService } from "./project.service.js";
 import { boardService } from "./board.service.js";
 import { taskService } from "./task.service.js";
 import { getSessionUser } from "../../lib/session.js";
+import { activityService } from "./activity.service.js";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -12,6 +13,27 @@ import type {
 } from "./task.service.js";
 
 export async function taskRoutes(fastify: FastifyInstance) {
+  // ── Get task detail ──
+  fastify.get(
+    "/api/tasks/:id",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+
+      const { id } = request.params as { id: string };
+      const task = await taskService.getById(id);
+      if (!task) return reply.status(404).send({ message: "Task not found." });
+
+      const member = await workspaceService.getMember(
+        task.column.board.project.workspaceId,
+        user.id,
+      );
+      if (!member) return reply.status(403).send({ message: "Not a member." });
+
+      return reply.send(task);
+    },
+  );
+
   // ── Create task ──
   fastify.post(
     "/api/columns/:columnId/tasks",
@@ -49,6 +71,18 @@ export async function taskRoutes(fastify: FastifyInstance) {
         dueDate,
         assigneeId,
       });
+
+      activityService
+        .log({
+          type: "created_task",
+          workspaceId: column.board.project.workspaceId,
+          actorId: user.id,
+          targetType: "task",
+          targetId: task.id,
+          metadata: { title: task.title, column: column.name },
+        })
+        .catch(() => {});
+
       return reply.status(201).send(task);
     },
   );
@@ -100,7 +134,17 @@ export async function taskRoutes(fastify: FastifyInstance) {
       if (!user) return reply.status(401).send({ message: "Unauthorized" });
 
       const { id } = request.params as { id: string };
-      const task = await taskService.getById(id);
+      // Lightweight lookup — only get workspaceId for permission check
+      const task = await prisma.task.findUnique({
+        where: { id },
+        select: {
+          column: {
+            select: {
+              board: { select: { project: { select: { workspaceId: true } } } },
+            },
+          },
+        },
+      });
       if (!task) return reply.status(404).send({ message: "Task not found." });
 
       const member = await workspaceService.getMember(
@@ -113,8 +157,20 @@ export async function taskRoutes(fastify: FastifyInstance) {
       if (!columnId)
         return reply.status(400).send({ message: "columnId is required." });
 
-      const updated = await taskService.move(id, { columnId, order });
-      return reply.send(updated);
+      await taskService.move(id, { columnId, order });
+
+      activityService
+        .log({
+          type: "moved_task",
+          workspaceId: task.column.board.project.workspaceId,
+          actorId: user.id,
+          targetType: "task",
+          targetId: id,
+          metadata: { toColumnId: columnId },
+        })
+        .catch(() => {});
+
+      return reply.status(200).send({});
     },
   );
 

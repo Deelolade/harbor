@@ -110,14 +110,12 @@ export default function TaskModal({
     enabled: !!taskId,
     staleTime: 0,
   });
-  const [title, setTitle] = useState(initialTask.title);
-  const [description, setDescription] = useState(initialTask.description || "");
-  const [priority, setPriority] = useState(initialTask.priority);
-  const [status, setStatus] = useState(initialTask.status);
-  const [dueDate, setDueDate] = useState(
-    initialTask.dueDate?.split("T")[0] || "",
-  );
-  const [assigneeId, setAssigneeId] = useState(initialTask.assignee?.id || "");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
+  const [status, setStatus] = useState("backlog");
+  const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
   const [saving, setSaving] = useState(false);
   const [comment, setComment] = useState("");
@@ -126,6 +124,7 @@ export default function TaskModal({
   const [showAddLabel, setShowAddLabel] = useState(false);
 
   useEffect(() => {
+    if (!initialTask) return;
     setTitle(initialTask.title);
     setDescription(initialTask.description || "");
     setPriority(initialTask.priority);
@@ -138,6 +137,7 @@ export default function TaskModal({
     queryClient.invalidateQueries({ queryKey: ["boards"] });
 
   const saveTask = async () => {
+    if (!initialTask) return;
     setSaving(true);
     try {
       const res = await fetch(`${API_URL}/api/tasks/${initialTask.id}`, {
@@ -245,7 +245,7 @@ export default function TaskModal({
     invalidate();
   };
 
-  const completed = initialTask.subtasks.filter((s) => s.completed).length;
+  const completed = initialTask?.subtasks.filter((s) => s.completed).length;
   const total = initialTask?.subtasks?.length || 0;
 
   if (isLoading || !initialTask) {

@@ -2,7 +2,6 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import { COOKIE_SECRET, FRONTEND_URL } from "./utils/env.js";
-import { cachedAuth } from "./lib/cached-auth.js";
 import compress from "@fastify/compress";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { workspaceRoutes } from "./modules/workspace/workspace.routes.js";
@@ -12,6 +11,7 @@ import { columnRoutes } from "./modules/workspace/column.routes.js";
 import { taskRoutes } from "./modules/workspace/task.routes.js";
 import { subtaskRoutes } from "./modules/workspace/subtask.routes.js";
 import { commentRoutes } from "./modules/workspace/comment.routes.js";
+import { activityRoutes } from "./modules/workspace/activity.routes.js";
 
 const fastify = Fastify({ logger: true });
 const port = 8800;
@@ -31,8 +31,6 @@ await fastify.register(cors, {
 
 await fastify.register(compress, { global: true, threshold: 1024 });
 
-await fastify.register(cachedAuth);
-
 fastify.route({
   method: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   url: "/api/auth/*",
@@ -46,6 +44,7 @@ await fastify.register(columnRoutes);
 await fastify.register(taskRoutes);
 await fastify.register(subtaskRoutes);
 await fastify.register(commentRoutes);
+await fastify.register(activityRoutes);
 
 fastify.listen({ port }, (err, address) => {
   if (err) {

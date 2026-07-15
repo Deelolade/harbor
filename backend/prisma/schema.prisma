@@ -31,6 +31,7 @@ model User {
   createdTasks    Task[]            @relation("TaskCreator")
   updatedTasks    Task[]            @relation("TaskUpdater")
   comments        Comment[]
+  activities      Activity[]        @relation("ActivityActor")
 
   @@unique([email])
   @@map("user")
@@ -98,6 +99,7 @@ model Workspace {
   members     WorkspaceMember[]
   invitations Invitation[]
   projects    Project[]
+  activities  Activity[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -265,6 +267,23 @@ model Comment {
   @@index([taskId])
   @@index([authorId])
   @@map("comment")
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  type        String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actorId     String
+  actor       User      @relation("ActivityActor", fields: [actorId], references: [id])
+  targetType  String
+  targetId    String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([actorId])
+  @@map("activity")
 }
 
 enum Priority {

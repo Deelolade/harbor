@@ -110,11 +110,11 @@ export const taskService = {
     });
   },
 
+  /** Move a task to a different column / reorder (lightweight, no full include) */
   async move(taskId: string, input: MoveTaskInput) {
     return prisma.task.update({
       where: { id: taskId },
       data: { columnId: input.columnId, order: input.order },
-      include: taskInclude,
     });
   },
 

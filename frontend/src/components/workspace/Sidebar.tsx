@@ -15,6 +15,7 @@ import {
   FiChevronDown,
   FiGrid,
   FiPlus,
+  FiClock,
 } from "react-icons/fi";
 import { authClient } from "../../lib/auth-client";
 
@@ -90,6 +91,11 @@ export default function Sidebar({
       icon: <FiUsers size={15} />,
       label: "Members",
       path: `${basePath}/members`,
+    },
+    {
+      icon: <FiClock size={15} />,
+      label: "Activity",
+      path: `${basePath}/activity`,
     },
     // { icon: <FiEye size={15} />, label: "Client views", path: `${basePath}/clients` },
     {
