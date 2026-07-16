@@ -15,6 +15,7 @@
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
     "@sendbyte/node": "^0.2.1",
+    "ably": "^2.24.0",
     "abstract-logging": "^2.0.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
@@ -67,7 +68,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/app.js"
   },
   "keywords": [],
