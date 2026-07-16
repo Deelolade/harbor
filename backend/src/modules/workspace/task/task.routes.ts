@@ -144,6 +144,41 @@ export async function taskRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(task);
   });
 
+  // ── Get single task ──
+  fastify.get("/api/tasks/:id", async (request, reply) => {
+    const user = await getSessionUser(request);
+    if (!user) return reply.status(401).send({ message: "Unauthorized" });
+    const { id } = request.params as { id: string };
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: {
+        labels: true,
+        subtasks: { orderBy: { order: "asc" } },
+        assignee: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+        createdBy: { select: { id: true, name: true, image: true } },
+        attachments: true,
+        comments: {
+          include: {
+            author: { select: { id: true, name: true, image: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        column: {
+          select: {
+            name: true,
+            board: {
+              select: { project: { select: { id: true, workspaceId: true } } },
+            },
+          },
+        },
+      },
+    });
+    if (!task) return reply.status(404).send({ message: "Task not found." });
+    return reply.send(task);
+  });
+
   // ── Update task ──
   fastify.put("/api/tasks/:id", async (request, reply) => {
     const user = await getSessionUser(request);

@@ -67,7 +67,9 @@ export default function NotificationBell() {
     assignment: "📋",
     comment: "💬",
     mention: "@",
-    due_date: "⏰",
+    moved_to_done: "✅",
+    moved_from_done: "🔄",
+    reassigned: "🔄",
   };
   console.log(notifications);
   return (

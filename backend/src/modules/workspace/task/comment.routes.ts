@@ -157,6 +157,30 @@ export async function commentRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Parse @mentions and notify mentioned users
+      const mentions = content.match(/@([\w.-]+)/g);
+      if (mentions) {
+        const names = [
+          ...new Set(mentions.map((m: string) => m.slice(1).toLowerCase())),
+        ];
+        const mentionedUsers = await prisma.user.findMany({
+          where: { name: { in: names, mode: "insensitive" } },
+          select: { id: true, name: true },
+        });
+        for (const mu of mentionedUsers) {
+          if (mu.id !== user.id) {
+            await notify({
+              userId: mu.id,
+              workspaceId: wsId,
+              type: "mention",
+              title: `${user.name || "Someone"} mentioned you in a comment`,
+              body: `"${fullTask?.title || "a task"}" — ${content.slice(0, 80)}`,
+              metadata: { taskId },
+            }).catch(() => {});
+          }
+        }
+      }
+
       return reply.status(201).send(comment);
     },
   );

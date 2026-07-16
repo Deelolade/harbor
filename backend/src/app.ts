@@ -13,6 +13,7 @@ import { columnRoutes } from "@/modules/workspace/board/column.routes.js";
 import { taskRoutes } from "@/modules/workspace/task/task.routes.js";
 import { subtaskRoutes } from "@/modules/workspace/task/subtask.routes.js";
 import { commentRoutes } from "@/modules/workspace/task/comment.routes.js";
+import { searchRoutes } from "@/modules/workspace/search.routes.js";
 import { activityRoutes } from "@/modules/workspace/task/activity.routes.js";
 import { notificationRoutes } from "@/modules/notification/notification.routes.js";
 
@@ -90,6 +91,7 @@ await fastify.register(subtaskRoutes);
 await fastify.register(commentRoutes);
 await fastify.register(activityRoutes);
 await fastify.register(notificationRoutes);
+await fastify.register(searchRoutes);
 
 fastify.listen({ port }, (err, address) => {
   if (err) {
