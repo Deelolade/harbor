@@ -174,7 +174,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!isOwner(member)) {
+      if (!canManage(member)) {
         return reply.status(403).send({
           message: "Only admins and owners can update the workspace.",
         });
@@ -263,10 +263,10 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .status(403)
           .send({ message: "You are not a member of this workspace." });
       }
-      if (!isOwner(member)) {
+      if (!canManage(member)) {
         return reply
           .status(403)
-          .send({ message: "Only the owner can add members." });
+          .send({ message: "Only admins and owners can add members." });
       }
 
       const { userId, role } = request.body as AddMemberInput;
@@ -412,7 +412,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const member = await requireMembership(id, user.id);
       if (!member) return reply.status(403).send({ message: "Not a member" });
-      if (!isOwner(member))
+      if (!canManage(member))
         return reply
           .status(403)
           .send({ message: "Only admins and owners can invite." });
