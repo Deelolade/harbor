@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { FiClock, FiMessageSquare, FiMove, FiPlus, FiTrash2, FiEdit, FiUserPlus } from "react-icons/fi";
+import {
+  FiClock,
+  FiMessageSquare,
+  FiMove,
+  FiPlus,
+  FiTrash2,
+  FiEdit,
+  FiUserPlus,
+} from "react-icons/fi";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -56,39 +64,73 @@ export default function ActivityFeed() {
 
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activity", workspaceId],
-    queryFn: () => fetch(`${API_URL}/api/workspaces/${workspaceId}/activity`, { credentials: "include" }).then(r => r.json()),
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/activity`, {
+        credentials: "include",
+      }).then((r) => r.json()),
     enabled: !!workspaceId,
-    refetchInterval: 15000,
   });
 
-  if (isLoading) return <div className="flex justify-center py-8"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex justify-center py-8">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      </div>
+    );
 
   return (
     <div className="p-8 max-w-xl">
       <h1 className="text-xl font-semibold mb-1">Activity</h1>
-      <p className="text-sm text-zinc-500 mb-6">Recent actions across your workspace.</p>
+      <p className="text-sm text-zinc-500 mb-6">
+        Recent actions across your workspace.
+      </p>
 
       {activities.length === 0 ? (
         <p className="text-sm text-zinc-600">No activity yet.</p>
       ) : (
         <div className="space-y-1">
           {activities.map((a: Activity) => (
-            <div key={a.id} className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.02] transition-colors">
-              <div className={`flex h-6 w-6 items-center justify-center rounded-full ${colors[a.type] || "bg-zinc-500/10 text-zinc-400"}`}>
+            <div
+              key={a.id}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/[0.02] transition-colors"
+            >
+              <div
+                className={`flex h-6 w-6 items-center justify-center rounded-full ${colors[a.type] || "bg-zinc-500/10 text-zinc-400"}`}
+              >
                 {icons[a.type] || <FiClock size={11} />}
               </div>
-              <img src={a.actor.image || ""} className="h-5 w-5 rounded-full bg-white/[0.06]" alt="" />
+              <img
+                src={a.actor.image || ""}
+                className="h-5 w-5 rounded-full bg-white/[0.06]"
+                alt=""
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] text-zinc-300">
                   <span className="font-medium text-white">{a.actor.name}</span>{" "}
-                  <span className="text-zinc-500">{labels[a.type] || a.type}</span>
-                  {a.metadata?.title && <span className="font-medium text-white"> {a.metadata.title}</span>}
+                  <span className="text-zinc-500">
+                    {labels[a.type] || a.type}
+                  </span>
+                  {a.metadata?.title && (
+                    <span className="font-medium text-white">
+                      {" "}
+                      {a.metadata.title}
+                    </span>
+                  )}
                   {a.metadata?.from && a.metadata?.to && (
-                    <span className="text-zinc-500"> from <span className="text-zinc-400">{a.metadata.from}</span> to <span className="text-zinc-400">{a.metadata.to}</span></span>
+                    <span className="text-zinc-500">
+                      {" "}
+                      from{" "}
+                      <span className="text-zinc-400">
+                        {a.metadata.from}
+                      </span>{" "}
+                      to <span className="text-zinc-400">{a.metadata.to}</span>
+                    </span>
                   )}
                 </p>
               </div>
-              <span className="shrink-0 text-[11px] text-zinc-600">{formatTime(a.createdAt)}</span>
+              <span className="shrink-0 text-[11px] text-zinc-600">
+                {formatTime(a.createdAt)}
+              </span>
             </div>
           ))}
         </div>

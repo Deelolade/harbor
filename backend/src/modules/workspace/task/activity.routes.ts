@@ -14,7 +14,7 @@ export async function activityRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const member = await workspaceService.getMember(id, user.id);
       if (!member) return reply.status(403).send({ message: "Not a member." });
-      return reply.send(await activityService.listByWorkspace(id));
+      return reply.send(await activityService.listByWorkspace(id, user.id));
     },
   );
 

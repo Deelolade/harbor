@@ -135,6 +135,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
     const count = await prisma.activity.count({
       where: {
         workspaceId: id,
+        NOT: { actorId: user.id },
         ...(member.lastViewedActivity
           ? { createdAt: { gt: member.lastViewedActivity } }
           : {}),

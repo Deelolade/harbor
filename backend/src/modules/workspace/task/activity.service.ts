@@ -21,14 +21,27 @@ export const activityService = {
     });
   },
 
-  async listByWorkspace(workspaceId: string, limit = 30) {
+  async listByWorkspace(workspaceId: string, userId: string, limit = 50) {
     return prisma.activity.findMany({
-      where: { workspaceId },
+      where: {
+        workspaceId,
+        // Don't show activities where the user is the actor
+        NOT: { actorId: userId },
+      },
       include: {
         actor: { select: { id: true, name: true, image: true } },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
+    });
+  },
+
+  async countUnseen(workspaceId: string, after: Date | null) {
+    return prisma.activity.count({
+      where: {
+        workspaceId,
+        ...(after ? { createdAt: { gt: after } } : {}),
+      },
     });
   },
 };

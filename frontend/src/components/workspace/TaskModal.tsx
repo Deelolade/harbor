@@ -13,6 +13,7 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import { toast } from "sonner";
+import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -117,8 +118,10 @@ export default function TaskModal({
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
-  const [saving, setSaving] = useState(false);
+  const { data: session } = authClient.useSession();
   const [comment, setComment] = useState("");
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   const [labelName, setLabelName] = useState("");
   const [labelColor, setLabelColor] = useState(labelColors[0]);
   const [showAddLabel, setShowAddLabel] = useState(false);
@@ -199,6 +202,35 @@ export default function TaskModal({
       invalidate();
     },
     onError: () => toast.error("Failed to add comment."),
+  });
+
+  const deleteComment = useMutation({
+    mutationFn: async (id: string) => {
+      await fetch(`${API_URL}/api/comments/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    },
+    onSuccess: () => invalidate(),
+    onError: () => toast.error("Failed to delete comment."),
+  });
+
+  const editComment = useMutation({
+    mutationFn: async (data: { id: string; content: string }) => {
+      const r = await fetch(`${API_URL}/api/comments/${data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: data.content }),
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error();
+    },
+    onSuccess: () => {
+      invalidate();
+      setEditingComment(null);
+      setEditContent("");
+    },
+    onError: () => toast.error("Failed to edit comment."),
   });
 
   const addLabel = useMutation({

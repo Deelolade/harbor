@@ -80,7 +80,11 @@ export async function taskRoutes(fastify: FastifyInstance) {
           actorId: user.id,
           targetType: "task",
           targetId: task.id,
-          metadata: { title: task.title, column: column.name },
+          metadata: {
+            title: task.title,
+            column: column.name,
+            assigneeId: assigneeId || null,
+          },
         })
         .catch(() => {});
 
@@ -89,7 +93,11 @@ export async function taskRoutes(fastify: FastifyInstance) {
         actor: { id: user.id, name: user.name || "Someone", image: user.image },
         targetType: "task",
         targetId: task.id,
-        metadata: { title: task.title, column: column.name },
+        metadata: {
+          title: task.title,
+          column: column.name,
+          assigneeId: assigneeId || null,
+        },
       });
 
       return reply.status(201).send(task);

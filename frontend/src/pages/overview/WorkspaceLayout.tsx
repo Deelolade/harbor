@@ -6,6 +6,8 @@ import Sidebar from "../../components/workspace/Sidebar";
 import ProfileModal from "../../components/workspace/ProfileModal";
 import { authClient } from "../../lib/auth-client";
 import { useActivityStream } from "../../hooks/use-activity-stream";
+import { useCommandPalette } from "../../hooks/use-command-palette";
+import CommandPalette from "../../components/workspace/CommandPalette";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -30,6 +32,9 @@ export default function WorkspaceLayout() {
 
   // Activate real-time activity stream for this workspace
   useActivityStream(workspaceId);
+
+  // Command palette
+  const palette = useCommandPalette();
 
   return (
     <div className="flex h-screen bg-[#0D0E12] text-white">
@@ -63,6 +68,16 @@ export default function WorkspaceLayout() {
           onClose={() => setProfileOpen(false)}
         />
       )}
+
+      <CommandPalette
+        open={palette.open}
+        onClose={palette.close}
+        query={palette.query}
+        onQueryChange={palette.setQuery}
+        mode={palette.mode}
+        filtered={palette.filtered}
+        activeIndex={palette.activeIndex}
+      />
     </div>
   );
 }

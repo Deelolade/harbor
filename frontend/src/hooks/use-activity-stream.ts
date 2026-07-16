@@ -46,10 +46,13 @@ export function useActivityStream(workspaceId: string | undefined) {
             });
 
             if (activity.type === "created_task") {
-              toast(
-                `${activity.actor.name} created "${activity.metadata?.title}"`,
-                { icon: "📋", duration: 4000 },
-              );
+              const isAssignedToMe =
+                activity.metadata?.assigneeId &&
+                activity.metadata.assigneeId === currentUserId;
+              const message = isAssignedToMe
+                ? `${activity.actor.name} created "${activity.metadata?.title}" and assigned you to it`
+                : `${activity.actor.name} created "${activity.metadata?.title}"`;
+              toast(message, { icon: "📋", duration: 4000 });
             } else if (activity.type === "moved_task") {
               const isMyTask =
                 activity.metadata?.assigneeId &&

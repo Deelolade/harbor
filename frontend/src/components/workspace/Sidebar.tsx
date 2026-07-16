@@ -69,7 +69,8 @@ export default function Sidebar({
     queryFn: () =>
       fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
         credentials: "include",
-      }).then((r) => r.json()),
+      }).then((r) => (r.ok ? r.json() : [])),
+    select: (data) => (Array.isArray(data) ? data : []),
     enabled: !!workspaceId,
     staleTime: 30_000,
   });
@@ -93,7 +94,7 @@ export default function Sidebar({
       }).then((r) => (r.ok ? r.json() : { unseen: 0 })),
     enabled: !!workspaceId,
     select: (data: any) => data?.unseen ?? 0,
-    refetchInterval: 15_000,
+    // Updated via Ably events — no polling needed
   });
 
   const handleActivityClick = () => {
@@ -126,11 +127,6 @@ export default function Sidebar({
       icon: <FiUsers size={15} />,
       label: "Members",
       path: `${basePath}/members`,
-    },
-    {
-      icon: <FiClock size={15} />,
-      label: "Activity",
-      path: `${basePath}/activity`,
     },
     // { icon: <FiEye size={15} />, label: "Client views", path: `${basePath}/clients` },
     {
