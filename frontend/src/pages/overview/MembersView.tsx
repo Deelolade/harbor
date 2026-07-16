@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { FiPlus, FiX } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -13,39 +14,34 @@ interface Member {
   user: { id: string; name: string; email: string; image?: string };
 }
 
+async function fetchMembers(workspaceId: string): Promise<Member[]> {
+  const res = await fetch(`${API_URL}/api/workspaces/${workspaceId}/members`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load members");
+  return res.json();
+}
+
+const roleColors: Record<string, string> = {
+  OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+};
+
 export default function MembersView() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ["members", workspaceId],
+    queryFn: () => fetchMembers(workspaceId!),
+    enabled: !!workspaceId,
+  });
+
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviting, setInviting] = useState(false);
 
-  const fetchMembers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/members`,
-        {
-          credentials: "include",
-        },
-      );
-      if (res.ok) setMembers(await res.json());
-    } catch {
-      toast.error("Failed to load members.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMembers();
-  }, [workspaceId]);
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    try {
+  const inviteMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(
         `${API_URL}/api/workspaces/${workspaceId}/invites`,
         {
@@ -56,24 +52,18 @@ export default function MembersView() {
         },
       );
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message);
+        const d = await res.json();
+        throw new Error(d.message);
       }
+    },
+    onSuccess: () => {
       toast.success("Invitation sent!");
       setShowInvite(false);
       setInviteEmail("");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to send invitation.");
-    } finally {
-      setInviting(false);
-    }
-  };
-
-  const roleColors: Record<string, string> = {
-    OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-  };
+    },
+    onError: (err: any) =>
+      toast.error(err?.message || "Failed to send invitation."),
+  });
 
   return (
     <div className="p-8">
@@ -88,19 +78,14 @@ export default function MembersView() {
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
         >
-          <FiPlus size={15} />
-          Invite member
+          <FiPlus size={15} /> Invite member
         </button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </div>
-      ) : members.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          No members yet — invite your team.
-        </p>
       ) : (
         <div className="space-y-2 max-w-xl">
           {members.map((m) => (
@@ -120,9 +105,7 @@ export default function MembersView() {
                 <p className="truncate text-xs text-zinc-500">{m.user.email}</p>
               </div>
               <span
-                className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
-                  roleColors[m.role] || roleColors.MEMBER
-                }`}
+                className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${roleColors[m.role] || roleColors.MEMBER}`}
               >
                 {m.role}
               </span>
@@ -131,7 +114,6 @@ export default function MembersView() {
         </div>
       )}
 
-      {/* Invite modal */}
       {showInvite && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-white/[0.06] bg-[#111318] p-6 shadow-2xl">
@@ -147,21 +129,18 @@ export default function MembersView() {
                 <FiX size={18} />
               </button>
             </div>
-
             <p className="text-sm text-zinc-500 mb-4">
               They will receive an email with a link to join this workspace.
             </p>
-
             <input
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+              onKeyDown={(e) => e.key === "Enter" && inviteMutation.mutate()}
               type="email"
               placeholder="colleague@company.com"
               autoFocus
               className="h-[48px] w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15 mb-4"
             />
-
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -173,11 +152,11 @@ export default function MembersView() {
                 Cancel
               </button>
               <button
-                onClick={handleInvite}
-                disabled={inviting || !inviteEmail.trim()}
+                onClick={() => inviteMutation.mutate()}
+                disabled={inviteMutation.isPending || !inviteEmail.trim()}
                 className="flex-1 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 disabled:opacity-40 transition-colors"
               >
-                {inviting ? "Sending..." : "Send invite"}
+                {inviteMutation.isPending ? "Sending..." : "Send invite"}
               </button>
             </div>
           </div>

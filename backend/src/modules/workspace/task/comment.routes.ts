@@ -1,0 +1,215 @@
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { auth } from "@/lib/auth.js";
+import { prisma } from "@/lib/prisma.js";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { commentService } from "@/modules/workspace/task/comment.service.js";
+import { notify } from "@/lib/notify.js";
+import { activityService } from "@/modules/workspace/task/activity.service.js";
+import { publishActivity } from "@/lib/ably.js";
+
+async function getSessionUser(request: FastifyRequest) {
+  const session = await auth.api.getSession({
+    headers: request.headers as HeadersInit,
+  });
+  return session?.user ?? null;
+}
+
+/** Verify user is workspace member via task → column → board → project → workspaceId chain */
+async function requireTaskMember(
+  taskId: string,
+  userId: string,
+  reply: FastifyReply,
+) {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      column: {
+        include: {
+          board: { include: { project: { select: { workspaceId: true } } } },
+        },
+      },
+    },
+  });
+  if (!task) {
+    reply.status(404).send({ message: "Task not found." });
+    return null;
+  }
+  const member = await workspaceService.getMember(
+    task.column.board.project.workspaceId,
+    userId,
+  );
+  if (!member) {
+    reply.status(403).send({ message: "Not a member." });
+    return null;
+  }
+  return task;
+}
+
+/** Verify user is workspace member for a comment (via comment → task chain) */
+async function requireCommentMember(
+  commentId: string,
+  userId: string,
+  reply: FastifyReply,
+) {
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    include: {
+      task: {
+        include: {
+          column: {
+            include: {
+              board: {
+                include: { project: { select: { workspaceId: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!comment) {
+    reply.status(404).send({ message: "Comment not found." });
+    return null;
+  }
+  const member = await workspaceService.getMember(
+    comment.task.column.board.project.workspaceId,
+    userId,
+  );
+  if (!member) {
+    reply.status(403).send({ message: "Not a member." });
+    return null;
+  }
+  return comment;
+}
+
+export async function commentRoutes(fastify: FastifyInstance) {
+  fastify.get(
+    "/api/tasks/:taskId/comments",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+      const { taskId } = request.params as { taskId: string };
+      const task = await requireTaskMember(taskId, user.id, reply);
+      if (!task) return;
+      return reply.send(await commentService.listByTask(taskId));
+    },
+  );
+
+  fastify.post(
+    "/api/tasks/:taskId/comments",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+      const { taskId } = request.params as { taskId: string };
+      const task = await requireTaskMember(taskId, user.id, reply);
+      if (!task) return;
+      const { content } = request.body as { content: string };
+      if (!content?.trim())
+        return reply.status(400).send({ message: "Comment cannot be empty." });
+      const comment = await commentService.create(taskId, user.id, content);
+
+      // Activity log
+      const wsId = task.column.board.project.workspaceId;
+      activityService
+        .log({
+          type: "commented",
+          workspaceId: wsId,
+          actorId: user.id,
+          targetType: "task",
+          targetId: taskId,
+          metadata: {
+            taskTitle: task.title || "",
+            snippet: content.slice(0, 80),
+          },
+        })
+        .catch(() => {});
+      publishActivity(wsId, {
+        type: "commented",
+        actor: { id: user.id, name: user.name || "Someone", image: user.image },
+        targetType: "task",
+        targetId: taskId,
+        metadata: {
+          taskTitle: task.title || "",
+          snippet: content.slice(0, 80),
+        },
+      });
+
+      // Notify assignee + creator (if not the commenter)
+      const fullTask = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { title: true, assigneeId: true, createdById: true },
+      });
+      if (fullTask) {
+        const toNotify = new Set<string>();
+        if (fullTask.assigneeId && fullTask.assigneeId !== user.id)
+          toNotify.add(fullTask.assigneeId);
+        if (fullTask.createdById && fullTask.createdById !== user.id)
+          toNotify.add(fullTask.createdById);
+        for (const uid of toNotify) {
+          notify({
+            userId: uid,
+            workspaceId: wsId,
+            type: "comment",
+            title: `${user.name || "Someone"} commented on "${fullTask.title}"`,
+            body: content.slice(0, 120),
+            metadata: { taskId },
+          }).catch(() => {});
+        }
+      }
+
+      // Parse @mentions and notify mentioned users
+      const mentions = content.match(/@([\w.-]+)/g);
+      if (mentions) {
+        const names = [
+          ...new Set(mentions.map((m: string) => m.slice(1).toLowerCase())),
+        ];
+        const mentionedUsers = await prisma.user.findMany({
+          where: { name: { in: names, mode: "insensitive" } },
+          select: { id: true, name: true },
+        });
+        for (const mu of mentionedUsers) {
+          if (mu.id !== user.id) {
+            await notify({
+              userId: mu.id,
+              workspaceId: wsId,
+              type: "mention",
+              title: `${user.name || "Someone"} mentioned you in a comment`,
+              body: `"${fullTask?.title || "a task"}" — ${content.slice(0, 80)}`,
+              metadata: { taskId },
+            }).catch(() => {});
+          }
+        }
+      }
+
+      return reply.status(201).send(comment);
+    },
+  );
+
+  fastify.put(
+    "/api/comments/:id",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+      const { id } = request.params as { id: string };
+      const comment = await requireCommentMember(id, user.id, reply);
+      if (!comment) return;
+      const { content } = request.body as { content: string };
+      if (!content?.trim())
+        return reply.status(400).send({ message: "Comment cannot be empty." });
+      return reply.send(await commentService.update(id, content));
+    },
+  );
+
+  fastify.delete(
+    "/api/comments/:id",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+      const { id } = request.params as { id: string };
+      const comment = await requireCommentMember(id, user.id, reply);
+      if (!comment) return;
+      await commentService.delete(id);
+      return reply.status(204).send();
+    },
+  );
+}

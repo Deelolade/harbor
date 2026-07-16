@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiUsers, FiFolder } from "react-icons/fi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { FiPlus, FiSearch, FiFolder } from "react-icons/fi";
 import { authClient } from "../../lib/auth-client";
 import { toast } from "sonner";
 
@@ -13,60 +14,33 @@ interface WorkspaceCard {
   owner: { id: string; name: string; image?: string };
   _count: { members: number };
   createdAt: string;
-  yourRole?: string;
 }
+
+async function fetchWorkspaces(): Promise<WorkspaceCard[]> {
+  const res = await fetch(`${API_URL}/api/workspaces`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load workspaces");
+  return res.json();
+}
+
 
 export default function WorkspacesList() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
-  const [workspaces, setWorkspaces] = useState<WorkspaceCard[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: workspaces = [], isLoading } = useQuery({
+    queryKey: ["workspaces"],
+    queryFn: fetchWorkspaces,
+  });
+
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
-  const [creating, setCreating] = useState(false);
 
-  const fetchWorkspaces = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/workspaces`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to load workspaces");
-      const data: any[] = await res.json();
-
-      // Fetch your role for each workspace
-      const enriched = await Promise.all(
-        data.map(async (ws) => {
-          try {
-            const mr = await fetch(`${API_URL}/api/workspaces/${ws.id}/members`, {
-              credentials: "include",
-            });
-            if (mr.ok) {
-              const members: any[] = await mr.json();
-              const me = members.find((m) => m.userId === session?.user?.id);
-              return { ...ws, yourRole: me?.role };
-            }
-          } catch {}
-          return ws;
-        }),
-      );
-      setWorkspaces(enriched);
-    } catch (err) {
-      toast.error("Could not load workspaces.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchWorkspaces();
-  }, []);
-
-  const handleCreate = async () => {
-    if (!newName.trim()) return;
-    setCreating(true);
-    try {
+  const createMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(`${API_URL}/api/workspaces`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,16 +48,16 @@ export default function WorkspacesList() {
         credentials: "include",
       });
       if (!res.ok) throw new Error();
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       setShowCreate(false);
       setNewName("");
-      fetchWorkspaces();
       toast.success("Workspace created!");
-    } catch {
-      toast.error("Failed to create workspace.");
-    } finally {
-      setCreating(false);
-    }
-  };
+    },
+    onError: () => toast.error("Failed to create workspace."),
+  });
 
   const filtered = workspaces.filter((ws) =>
     ws.name.toLowerCase().includes(search.toLowerCase()),
@@ -95,7 +69,6 @@ export default function WorkspacesList() {
   return (
     <div className="min-h-screen bg-[#0D0E12] text-white">
       <div className="mx-auto max-w-4xl px-6 py-12">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">Your workspaces</h1>
@@ -107,14 +80,15 @@ export default function WorkspacesList() {
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
           >
-            <FiPlus size={16} />
-            Create workspace
+            <FiPlus size={16} /> Create workspace
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative mb-8">
-          <FiSearch size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600" />
+          <FiSearch
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -123,7 +97,7 @@ export default function WorkspacesList() {
           />
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-20">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
           </div>
@@ -140,7 +114,6 @@ export default function WorkspacesList() {
           </div>
         ) : (
           <>
-            {/* Owned */}
             {owned.length > 0 && (
               <div className="mb-8">
                 {shared.length > 0 && (
@@ -159,8 +132,6 @@ export default function WorkspacesList() {
                 </div>
               </div>
             )}
-
-            {/* Shared */}
             {shared.length > 0 && (
               <div>
                 <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-600">
@@ -181,7 +152,6 @@ export default function WorkspacesList() {
         )}
       </div>
 
-      {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-white/[0.06] bg-[#111318] p-6 shadow-2xl">
@@ -189,24 +159,27 @@ export default function WorkspacesList() {
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              onKeyDown={(e) => e.key === "Enter" && createMutation.mutate()}
               placeholder="Workspace name"
               autoFocus
               className="h-[48px] w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15 mb-4"
             />
             <div className="flex gap-3">
               <button
-                onClick={() => { setShowCreate(false); setNewName(""); }}
+                onClick={() => {
+                  setShowCreate(false);
+                  setNewName("");
+                }}
                 className="flex-1 rounded-xl border border-[#1F1F23] bg-transparent px-4 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04] transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleCreate}
-                disabled={creating || !newName.trim()}
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending || !newName.trim()}
                 className="flex-1 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-400 disabled:opacity-40 transition-colors"
               >
-                {creating ? "Creating..." : "Create"}
+                {createMutation.isPending ? "Creating..." : "Create"}
               </button>
             </div>
           </div>
@@ -224,12 +197,6 @@ function WorkspaceCard({
   onClick: () => void;
 }) {
   const initial = workspace.name.charAt(0).toUpperCase();
-  const roleColors: Record<string, string> = {
-    OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-  };
-
   return (
     <button
       onClick={onClick}
@@ -242,16 +209,10 @@ function WorkspaceCard({
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold">{workspace.name}</p>
           <p className="text-xs text-zinc-500">
-            {workspace._count.members} member{workspace._count.members !== 1 ? "s" : ""}
+            {workspace._count.members} member
+            {workspace._count.members !== 1 ? "s" : ""}
           </p>
         </div>
-        {workspace.yourRole && (
-          <span
-            className={`rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${roleColors[workspace.yourRole] || roleColors.MEMBER}`}
-          >
-            {workspace.yourRole}
-          </span>
-        )}
       </div>
     </button>
   );

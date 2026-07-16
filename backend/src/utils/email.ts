@@ -1,10 +1,10 @@
 import { createElement } from "react";
 import { render } from "@react-email/render";
 import { SendByte } from "@sendbyte/node";
-import { SENDBYTE_SECRET } from "./env.js";
-import VerifyEmail from "../emails/verify-email.js";
-import ResetPassword from "../emails/reset-password.js";
-import InviteEmail from "../emails/invite-email.js";
+import { SENDBYTE_SECRET } from "@/utils/env.js";
+import VerifyEmail from "@/emails/verify-email.js";
+import ResetPassword from "@/emails/reset-password.js";
+import InviteEmail from "@/emails/invite-email.js";
 
 const sendbyte = new SendByte(SENDBYTE_SECRET);
 

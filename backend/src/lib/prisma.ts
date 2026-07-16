@@ -6,6 +6,9 @@ const { Pool } = pg;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 5 * 60 * 1000, // 5 min — keep connections warm between requests
+  connectionTimeoutMillis: 10000,
   ssl: {
     rejectUnauthorized: false,
   },

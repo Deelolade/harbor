@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma.js";
-import type { WorkspaceRole } from "../../generated/prisma/client/index.js";
+import { prisma } from "@/lib/prisma.js";
+import type { WorkspaceRole } from "../../generated/prisma/client.js";
 
 export interface CreateWorkspaceInput {
   name: string;

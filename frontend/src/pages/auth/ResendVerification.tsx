@@ -5,7 +5,6 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { toast } from "sonner";
-import { FRONTEND_URL } from "../../lib/auth-client";
 
 export default function ResendVerification() {
   const [email, setEmail] = useState("");

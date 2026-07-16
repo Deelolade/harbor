@@ -1,18 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   FiHome,
-  FiInbox,
-  FiCheckSquare,
+  FiActivity,
   FiFolder,
   FiUsers,
-  FiEye,
-  FiLayers,
-  FiTarget,
+  FiSettings,
   FiChevronLeft,
   FiChevronRight,
   FiLogOut,
-  FiSettings,
   FiChevronDown,
   FiGrid,
   FiPlus,
@@ -21,19 +18,11 @@ import { authClient } from "../../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
-const projects = [
-  {
-    name: "Design System",
-    icon: <FiLayers size={14} />,
-    color: "text-violet-400",
-  },
-  {
-    name: "Marketing Site",
-    icon: <FiTarget size={14} />,
-    color: "text-amber-400",
-  },
-  { name: "Mobile App", icon: <FiEye size={14} />, color: "text-emerald-400" },
-];
+interface ProjectItem {
+  id: string;
+  name: string;
+  image?: string;
+}
 
 interface WorkspaceInfo {
   id: string;
@@ -63,62 +52,72 @@ export default function Sidebar({
   const location = useLocation();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
   const switcherRef = useRef<HTMLDivElement>(null);
 
-  // Close switcher on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        switcherRef.current &&
-        !switcherRef.current.contains(e.target as Node)
-      ) {
-        setSwitcherOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const { data: workspaces = [] } = useQuery<WorkspaceInfo[]>({
+    queryKey: ["workspaces"],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces`, { credentials: "include" }).then((r) =>
+        r.json(),
+      ),
+    staleTime: 30_000,
+  });
 
-  // Fetch workspaces for the switcher
-  useEffect(() => {
-    fetch(`${API_URL}/api/workspaces`, { credentials: "include" })
-      .then((r) => r.json())
-      .then(setWorkspaces)
-      .catch(() => {});
-  }, []);
+  const { data: projects = [] } = useQuery<ProjectItem[]>({
+    queryKey: ["sidebar-projects", workspaceId],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/projects`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : [])),
+    select: (data) => (Array.isArray(data) ? data : []),
+    enabled: !!workspaceId,
+    staleTime: 30_000,
+  });
+
+  const { data: unseen = 0 } = useQuery<number>({
+    queryKey: ["activity-unseen", workspaceId],
+    queryFn: () =>
+      fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/unseen`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : { unseen: 0 })),
+    enabled: !!workspaceId,
+    select: (data: any) => data?.unseen ?? 0,
+    // Updated via Ably events — no polling needed
+  });
+
+  const handleActivityClick = () => {
+    if (!workspaceId) return;
+    fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/seen`, {
+      method: "POST",
+      credentials: "include",
+    });
+    navigate(`${basePath}/activity`);
+  };
 
   const handleSignOut = async () => {
     await authClient.signOut();
     navigate("/sign-in");
   };
 
-  const basePath = `/workspace/${workspaceId}`;
+  const basePath = workspaceId ? `/workspace/${workspaceId}` : "#";
 
   const navItems = [
     { icon: <FiHome size={15} />, label: "Home", path: basePath },
+    // { icon: <FiInbox size={15} />, label: "Inbox", path: `${basePath}/inbox`, badge: "3" },
     {
-      icon: <FiInbox size={15} />,
-      label: "Inbox",
-      path: `${basePath}/inbox`,
-      badge: "3",
-    },
-    {
-      icon: <FiCheckSquare size={15} />,
-      label: "My tasks",
-      path: `${basePath}/tasks`,
-      badge: "7",
+      icon: <FiActivity size={15} />,
+      label: "Activity",
+      path: `${basePath}/activity`,
+      badge: unseen > 0 ? String(unseen) : undefined,
+      badgeColor: unseen > 0 ? "bg-blue-500 text-white" : undefined,
+      onClick: handleActivityClick,
     },
     {
       icon: <FiUsers size={15} />,
       label: "Members",
       path: `${basePath}/members`,
     },
-    {
-      icon: <FiEye size={15} />,
-      label: "Client views",
-      path: `${basePath}/clients`,
-    },
+    // { icon: <FiEye size={15} />, label: "Client views", path: `${basePath}/clients` },
     {
       icon: <FiSettings size={15} />,
       label: "Settings",
@@ -257,22 +256,16 @@ export default function Sidebar({
               <div className="ml-2 space-y-0.5 border-l border-white/[0.04] pl-3">
                 {projects.map((p) => (
                   <button
-                    key={p.name}
-                    onClick={() =>
-                      navigate(
-                        `${basePath}/projects/${p.name.toLowerCase().replace(/\s+/g, "-")}`,
-                      )
-                    }
+                    key={p.id}
+                    onClick={() => navigate(`${basePath}/projects/${p.id}`)}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                      location.pathname.includes(
-                        p.name.toLowerCase().replace(/\s+/g, "-"),
-                      )
+                      location.pathname.includes(`/projects/${p.id}`)
                         ? "text-white bg-white/[0.04]"
                         : "text-zinc-500 hover:bg-white/[0.04] hover:text-white"
                     }`}
                   >
-                    <span className={p.color}>{p.icon}</span>
-                    <span>{p.name}</span>
+                    <FiFolder size={14} />
+                    <span className="truncate">{p.name}</span>
                   </button>
                 ))}
               </div>
@@ -286,9 +279,9 @@ export default function Sidebar({
           />
         )}
 
-        {navItems.map((item) => (
+        {navItems.map((item, idx) => (
           <SidebarItem
-            key={item.label}
+            key={item.label || idx}
             icon={item.icon}
             label={item.label}
             badge={item.badge}
@@ -329,7 +322,7 @@ export default function Sidebar({
                 {user?.name || "User"}
               </p>
               <p className="truncate text-[11px] capitalize text-zinc-500">
-                {user?.role?.toLowerCase() || "member"}
+                {user?.name || "User"}
               </p>
             </div>
           )}
@@ -343,6 +336,7 @@ function SidebarItem({
   icon,
   label,
   badge,
+  badgeColor,
   collapsed,
   active,
   onClick,
@@ -350,6 +344,7 @@ function SidebarItem({
   icon: React.ReactNode;
   label: string;
   badge?: string;
+  badgeColor?: string;
   collapsed: boolean;
   active?: boolean;
   onClick?: () => void;
@@ -371,7 +366,9 @@ function SidebarItem({
         <>
           <span className="flex-1 text-left">{label}</span>
           {badge && (
-            <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-zinc-500">
+            <span
+              className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${badgeColor || "bg-white/[0.06] text-zinc-500"}`}
+            >
               {badge}
             </span>
           )}

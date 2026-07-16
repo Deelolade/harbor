@@ -39,7 +39,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "border border-[#1F1F23]",
               "focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15",
               "disabled:cursor-not-allowed disabled:opacity-40",
-              icon && "pl-10",
+              icon ? "pl-10" : "",
               isPassword && "pr-11",
               error &&
                 "border-red-500/40 focus:border-red-500/40 focus:ring-red-500/15",
