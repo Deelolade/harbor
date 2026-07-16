@@ -5,14 +5,6 @@ import { authClient } from "../lib/auth-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
-interface AblyActivity {
-  type: string;
-  actor: { id: string; name: string; image?: string | null };
-  targetType: string;
-  targetId?: string;
-  metadata?: Record<string, any>;
-}
-
 export function useActivityStream(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
@@ -21,52 +13,45 @@ export function useActivityStream(workspaceId: string | undefined) {
   useEffect(() => {
     if (!workspaceId) return;
 
-    let es: EventSource | null = null;
+    const url = `${API_URL}/api/ably/sse?channel=workspace:${workspaceId}:activity`;
+    const es = new EventSource(url, { withCredentials: true });
 
-    // Fetch a temporary Ably SSE token from the backend
-    fetch(
-      `${API_URL}/api/ably/token?channel=workspace:${workspaceId}:activity`,
-      {
-        credentials: "include",
-      },
-    )
-      .then((r) => r.json())
-      .then(({ token }) => {
-        const url = `https://realtime.ably.io/event-stream?accessToken=${token}&channels=workspace:${workspaceId}:activity&v=1.2`;
-        es = new EventSource(url);
+    es.onmessage = (event) => {
+      try {
+        const activity = JSON.parse(event.data);
 
-        es.onmessage = (event) => {
-          try {
-            const activity: AblyActivity = JSON.parse(event.data);
-            queryClient.invalidateQueries({
-              queryKey: ["activity", workspaceId],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["activity-unseen", workspaceId],
-            });
+        if (activity?.type) {
+          queryClient.invalidateQueries({
+            queryKey: ["activity", workspaceId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["activity-unseen", workspaceId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
 
-            if (activity.type === "created_task") {
-              const isAssignedToMe =
-                activity.metadata?.assigneeId &&
-                activity.metadata.assigneeId === currentUserId;
-              const message = isAssignedToMe
+          if (activity.type === "created_task") {
+            const isAssigned = activity.metadata?.assigneeId === currentUserId;
+            toast(
+              isAssigned
                 ? `${activity.actor.name} created "${activity.metadata?.title}" and assigned you to it`
-                : `${activity.actor.name} created "${activity.metadata?.title}"`;
-              toast(message, { icon: "📋", duration: 4000 });
-            } else if (activity.type === "moved_task") {
-              const isMyTask =
-                activity.metadata?.assigneeId &&
-                activity.metadata.assigneeId === currentUserId;
-              const message = isMyTask
-                ? `${activity.actor.name} moved your task "${activity.metadata?.taskTitle || "Untitled"}"`
-                : `${activity.actor.name} moved a task`;
-              toast(message, { icon: "↗️", duration: 3000 });
-            }
-          } catch {}
-        };
-      })
-      .catch(() => {});
+                : `${activity.actor.name} created "${activity.metadata?.title}"`,
+              { icon: "📋", duration: 4000 },
+            );
+          } else if (activity.type === "moved_task") {
+            const isMine = activity.metadata?.assigneeId === currentUserId;
+            toast(
+              isMine
+                ? `${activity.actor.name} moved your task "${activity.metadata?.taskTitle || ""}"`
+                : `${activity.actor.name} moved a task`,
+              { icon: "↗️", duration: 3000 },
+            );
+          }
+        }
+      } catch {}
+    };
 
-    return () => es?.close();
-  }, [workspaceId, queryClient]);
+    es.onerror = () => es.close();
+    return () => es.close();
+  }, [workspaceId, currentUserId, queryClient]);
 }

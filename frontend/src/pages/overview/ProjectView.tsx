@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FiPlus,
@@ -108,6 +108,7 @@ export default function ProjectView() {
     id: string;
   }>();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: boards = [], isLoading } = useQuery({
     queryKey: ["boards", projectId],
@@ -139,6 +140,25 @@ export default function ProjectView() {
   const suggestedColumns = ["Backlog", "Review"];
   const board = boards.find((b) => b.id === activeBoard) || boards[0];
   if (boards.length > 0 && !activeBoard) setActiveBoard(boards[0].id);
+
+  // Auto-open task modal from URL (e.g., clicked from notification)
+  useEffect(() => {
+    const taskId = searchParams.get("taskId");
+    if (!taskId || boards.length === 0) return;
+    for (const b of boards) {
+      for (const c of b.columns) {
+        const t = c.tasks?.find((t) => t.id === taskId);
+        if (t) {
+          setSelectedTask(t);
+          setActiveBoard(b.id);
+          break;
+        }
+      }
+    }
+    // Clear the param so it doesn't re-open on refresh
+    searchParams.delete("taskId");
+    setSearchParams(searchParams, { replace: true });
+  }, [boards, searchParams, setSearchParams]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["boards", projectId] });

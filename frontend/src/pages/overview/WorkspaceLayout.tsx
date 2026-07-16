@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FiChevronRight } from "react-icons/fi";
 import Sidebar from "../../components/workspace/Sidebar";
 import ProfileModal from "../../components/workspace/ProfileModal";
+import NotificationBell from "../../components/workspace/NotificationBell";
 import { authClient } from "../../lib/auth-client";
 import { useActivityStream } from "../../hooks/use-activity-stream";
 import { useCommandPalette } from "../../hooks/use-command-palette";
@@ -55,9 +56,10 @@ export default function WorkspaceLayout() {
             Workspaces
           </Link>
           <FiChevronRight size={13} className="text-zinc-700" />
-          <span className="text-[13px] font-semibold text-white">
+          <span className="flex-1 text-[13px] font-semibold text-white">
             {workspaceName}
           </span>
+          <NotificationBell />
         </div>
         <Outlet />
       </main>

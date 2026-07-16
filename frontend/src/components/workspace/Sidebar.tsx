@@ -98,6 +98,7 @@ export default function Sidebar({
   });
 
   const handleActivityClick = () => {
+    if (!workspaceId) return;
     fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/seen`, {
       method: "POST",
       credentials: "include",
@@ -110,7 +111,7 @@ export default function Sidebar({
     navigate("/sign-in");
   };
 
-  const basePath = `/workspace/${workspaceId}`;
+  const basePath = workspaceId ? `/workspace/${workspaceId}` : "#";
 
   const navItems = [
     { icon: <FiHome size={15} />, label: "Home", path: basePath },

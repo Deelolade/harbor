@@ -32,6 +32,7 @@ model User {
   updatedTasks    Task[]            @relation("TaskUpdater")
   comments        Comment[]
   activities      Activity[]        @relation("ActivityActor")
+  notifications   Notification[]
 
   @@unique([email])
   @@map("user")
@@ -285,6 +286,23 @@ model Activity {
   @@index([workspaceId, createdAt])
   @@index([actorId])
   @@map("activity")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  type        String
+  title       String
+  body        String?
+  read        Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+  @@index([workspaceId])
+  @@map("notification")
 }
 
 enum Priority {

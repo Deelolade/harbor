@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth.js";
 import { prisma } from "@/lib/prisma.js";
 import { workspaceService } from "@/modules/workspace/workspace.service.js";
 import { commentService } from "@/modules/workspace/task/comment.service.js";
+import { notify } from "@/lib/notify.js";
+import { activityService } from "@/modules/workspace/task/activity.service.js";
+import { publishActivity } from "@/lib/ably.js";
 
 async function getSessionUser(request: FastifyRequest) {
   const session = await auth.api.getSession({
@@ -104,6 +107,56 @@ export async function commentRoutes(fastify: FastifyInstance) {
       if (!content?.trim())
         return reply.status(400).send({ message: "Comment cannot be empty." });
       const comment = await commentService.create(taskId, user.id, content);
+
+      // Activity log
+      const wsId = task.column.board.project.workspaceId;
+      activityService
+        .log({
+          type: "commented",
+          workspaceId: wsId,
+          actorId: user.id,
+          targetType: "task",
+          targetId: taskId,
+          metadata: {
+            taskTitle: task.title || "",
+            snippet: content.slice(0, 80),
+          },
+        })
+        .catch(() => {});
+      publishActivity(wsId, {
+        type: "commented",
+        actor: { id: user.id, name: user.name || "Someone", image: user.image },
+        targetType: "task",
+        targetId: taskId,
+        metadata: {
+          taskTitle: task.title || "",
+          snippet: content.slice(0, 80),
+        },
+      });
+
+      // Notify assignee + creator (if not the commenter)
+      const fullTask = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { title: true, assigneeId: true, createdById: true },
+      });
+      if (fullTask) {
+        const toNotify = new Set<string>();
+        if (fullTask.assigneeId && fullTask.assigneeId !== user.id)
+          toNotify.add(fullTask.assigneeId);
+        if (fullTask.createdById && fullTask.createdById !== user.id)
+          toNotify.add(fullTask.createdById);
+        for (const uid of toNotify) {
+          notify({
+            userId: uid,
+            workspaceId: wsId,
+            type: "comment",
+            title: `${user.name || "Someone"} commented on "${fullTask.title}"`,
+            body: content.slice(0, 120),
+            metadata: { taskId },
+          }).catch(() => {});
+        }
+      }
+
       return reply.status(201).send(comment);
     },
   );

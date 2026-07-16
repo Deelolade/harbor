@@ -118,6 +118,7 @@ export default function TaskModal({
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
+  const [saving, setSaving] = useState(false);
   const { data: session } = authClient.useSession();
   const [comment, setComment] = useState("");
   const [editingComment, setEditingComment] = useState<string | null>(null);
