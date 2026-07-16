@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiSearch, FiUsers, FiFolder } from "react-icons/fi";
+import { FiPlus, FiSearch, FiFolder } from "react-icons/fi";
 import { authClient } from "../../lib/auth-client";
 import { toast } from "sonner";
 
@@ -24,11 +24,6 @@ async function fetchWorkspaces(): Promise<WorkspaceCard[]> {
   return res.json();
 }
 
-const roleColors: Record<string, string> = {
-  OWNER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  ADMIN: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-  MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-};
 
 export default function WorkspacesList() {
   const navigate = useNavigate();

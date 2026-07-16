@@ -31,7 +31,7 @@ export function useCommandPalette() {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"commands" | "search">("commands");
   const [activeIndex, setActiveIndex] = useState(0);
-  const gKeyTimer = useRef<ReturnType<typeof setTimeout>>();
+  const gKeyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const gKeyHeld = useRef(false);
 
   const basePath = workspaceId ? `/workspace/${workspaceId}` : "";

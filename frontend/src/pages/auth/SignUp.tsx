@@ -46,9 +46,9 @@ export default function SignUp() {
 
   const handleSocial = async (
     provider: "google" | "github",
-    e: React.MouseEvent,
+    e?: React.MouseEvent,
   ) => {
-    e.preventDefault();
+    e?.preventDefault();
     await authClient.signIn.social({
       provider,
       callbackURL: `${FRONTEND_URL}/workspaces`,
@@ -156,11 +156,11 @@ export default function SignUp() {
         <div className="grid grid-cols-2 gap-2.5">
           <SocialButton
             provider="google"
-            onClick={(e) => handleSocial("google", e)}
+            onClick={() => handleSocial("google")}
           />
           <SocialButton
             provider="github"
-            onClick={(e) => handleSocial("github", e)}
+            onClick={() => handleSocial("github")}
           />
         </div>
       </form>

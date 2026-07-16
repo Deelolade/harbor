@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma.js";
-import type { Priority } from "../../generated/prisma/client/index.js";
+import type { $Enums } from "../../../generated/prisma/client.js";
+
+type Priority = $Enums.Priority;
 
 export interface CreateTaskInput {
   title: string;

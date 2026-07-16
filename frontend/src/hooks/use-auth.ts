@@ -77,7 +77,20 @@ export function useSignUp() {
 // ── Forgot Password ──
 export function useForgotPassword() {
   return useMutation({
-    mutationFn: (data: { email: string }) => authClient.forgetPassword(data),
+    mutationFn: async (data: { email: string }) => {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/forget-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          credentials: "include",
+        },
+      );
+      if (res.status === 404 || res.status === 200) return;
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Something went wrong.");
+    },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Something went wrong."), {
         id: "auth-error",

@@ -2,7 +2,7 @@ import { cn } from "../../lib/utils";
 
 interface SocialButtonProps {
   provider: "google" | "github";
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent) => void | Promise<void>;
   className?: string;
 }
 

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma.js";
-import type { ProjectVisibility } from "../../generated/prisma/client/index.js";
+import type { ProjectVisibility } from "../../generated/prisma/client.js";
 
 export interface CreateProjectInput {
   name: string;

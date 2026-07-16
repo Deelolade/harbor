@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,7 +13,6 @@ import {
   FiChevronDown,
   FiGrid,
   FiPlus,
-  FiClock,
 } from "react-icons/fi";
 import { authClient } from "../../lib/auth-client";
 
@@ -75,18 +74,7 @@ export default function Sidebar({
     staleTime: 30_000,
   });
 
-  const { data: activityCount = 0 } = useQuery<number>({
-    queryKey: ["activity", workspaceId],
-    queryFn: () =>
-      fetch(`${API_URL}/api/workspaces/${workspaceId}/activity`, {
-        credentials: "include",
-      }).then((r) => (r.ok ? r.json() : [])),
-    enabled: !!workspaceId,
-    select: (data: any[]) => data.length,
-    staleTime: 10_000,
-  });
-
-  const { data: unseen = 0 } = useQuery({
+  const { data: unseen = 0 } = useQuery<number>({
     queryKey: ["activity-unseen", workspaceId],
     queryFn: () =>
       fetch(`${API_URL}/api/workspaces/${workspaceId}/activity/unseen`, {
@@ -334,7 +322,7 @@ export default function Sidebar({
                 {user?.name || "User"}
               </p>
               <p className="truncate text-[11px] capitalize text-zinc-500">
-                {user?.role?.toLowerCase() || "member"}
+                {user?.name || "User"}
               </p>
             </div>
           )}

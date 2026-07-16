@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { FiPlus, FiX } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -30,7 +30,6 @@ const roleColors: Record<string, string> = {
 
 export default function MembersView() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const queryClient = useQueryClient();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["members", workspaceId],
@@ -64,28 +63,6 @@ export default function MembersView() {
     },
     onError: (err: any) =>
       toast.error(err?.message || "Failed to send invitation."),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      const res = await fetch(
-        `${API_URL}/api/workspaces/${workspaceId}/members/${memberId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
-      );
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["members", workspaceId] });
-      toast.success("Member removed.");
-    },
-    onError: (err: any) =>
-      toast.error(err?.message || "Failed to remove member."),
   });
 
   return (

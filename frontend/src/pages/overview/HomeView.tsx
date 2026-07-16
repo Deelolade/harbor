@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiTrash2, FiX, FiFolder } from "react-icons/fi";
 import { toast } from "sonner";
 import { authClient } from "../../lib/auth-client";
-import { PiFlagPennantDuotone } from "react-icons/pi";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
