@@ -16,9 +16,9 @@ import { commentRoutes } from "@/modules/workspace/task/comment.routes.js";
 import { searchRoutes } from "@/modules/workspace/search.routes.js";
 import { activityRoutes } from "@/modules/workspace/task/activity.routes.js";
 import { notificationRoutes } from "@/modules/notification/notification.routes.js";
+import { PORT } from "@/utils/env.js";
 
 const fastify = Fastify({ logger: true });
-const port = 8800;
 
 fastify.get("/", async (_request, reply) => {
   reply.send("Hello new fastify project sample");
@@ -93,10 +93,16 @@ await fastify.register(activityRoutes);
 await fastify.register(notificationRoutes);
 await fastify.register(searchRoutes);
 
-fastify.listen({ port }, (err, address) => {
-  if (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-  fastify.log.info(`Server listening at ${address}`);
-});
+fastify.listen(
+  {
+    port: PORT,
+    host: "0.0.0.0",
+  },
+  (err, address) => {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    fastify.log.info(`Server listening at ${address}`);
+  },
+);
