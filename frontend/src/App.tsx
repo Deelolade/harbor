@@ -15,6 +15,7 @@ import ActivityView from "./pages/overview/ActivityView";
 import PlaceholderView from "./pages/overview/PlaceholderView";
 import ProjectView from "./pages/overview/ProjectView";
 import WorkspacesList from "./pages/workspaces/WorkspacesList";
+import ErrorFallback from "./pages/ErrorFallback";
 
 function Home() {
   return (
@@ -36,7 +37,6 @@ export default function App() {
       <Route path="/invite" element={<InviteAcceptance />} />
       <Route path="/resend-verification" element={<ResendVerification />} />
 
-      {/* Workspaces list */}
       <Route
         path="/workspaces"
         element={
@@ -46,7 +46,6 @@ export default function App() {
         }
       />
 
-      {/* Individual workspace */}
       <Route
         path="/workspace/:workspaceId"
         element={
@@ -67,6 +66,9 @@ export default function App() {
         <Route path="activity" element={<ActivityView />} />
         <Route path="projects/:id" element={<ProjectView />} />
       </Route>
+
+      {/* Catch-all 404 */}
+      <Route path="*" element={<ErrorFallback />} />
     </Routes>
   );
 }
