@@ -10,8 +10,6 @@ import {
   FiBell,
   FiPlus,
   FiSearch,
-  FiMoreHorizontal,
-  FiChevronDown,
   FiGrid,
   FiCalendar,
   FiMessageCircle,
