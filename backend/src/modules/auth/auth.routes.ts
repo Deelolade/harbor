@@ -153,8 +153,23 @@ export const authRoutes = async (
       headers: fromNodeHeaders(request.headers),
       ...(request.body ? { body: JSON.stringify(request.body) } : {}),
     });
+    console.log(req.url);
 
     const response = await auth.handler(req);
+    console.log("Incoming:", request.method, request.url);
+    console.log("Forwarding:", req.method, req.url);
+
+    // const response = await auth.handler(req);
+
+    console.log("Status:", response.status);
+    console.log("Location:", response.headers.get("location"));
+    console.log("Body:", await response.clone().text());
+
+    console.log({
+      status: response.status,
+      url: req.url,
+      body: await response.clone().text(),
+    });
 
     // OAuth redirects need reply.redirect() to work in popups
     const location = response.headers.get("location");

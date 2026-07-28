@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -16,14 +17,6 @@ import PlaceholderView from "./pages/overview/PlaceholderView";
 import ProjectView from "./pages/overview/ProjectView";
 import WorkspacesList from "./pages/workspaces/WorkspacesList";
 import ErrorFallback from "./pages/ErrorFallback";
-
-function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0D0E12] text-white">
-      <h1 className="text-2xl font-bold">Landing Page</h1>
-    </div>
-  );
-}
 
 export default function App() {
   return (
