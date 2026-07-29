@@ -60,7 +60,8 @@
     "sonic-boom": "^4.2.1",
     "split2": "^4.2.0",
     "thread-stream": "^4.2.0",
-    "toad-cache": "^3.7.1"
+    "toad-cache": "^3.7.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.0.1",

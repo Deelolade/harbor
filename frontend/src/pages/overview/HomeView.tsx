@@ -10,7 +10,6 @@ import {
   FiLayers,
   FiActivity,
   FiClock,
-  FiChevronRight,
   FiGrid,
 } from "react-icons/fi";
 import { toast } from "sonner";
