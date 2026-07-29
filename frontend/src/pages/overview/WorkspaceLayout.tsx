@@ -10,7 +10,7 @@ import { useActivityStream } from "../../hooks/use-activity-stream";
 import { useCommandPalette } from "../../hooks/use-command-palette";
 import CommandPalette from "../../components/workspace/CommandPalette";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function WorkspaceLayout() {
   const { workspaceId } = useParams<{ workspaceId: string }>();

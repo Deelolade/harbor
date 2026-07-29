@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiBell } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface Notification {
   id: string;

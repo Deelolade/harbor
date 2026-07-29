@@ -18,7 +18,7 @@ interface MembersViewModalProps {
   workspaceId: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 const ROLES = ["OWNER", "ADMIN", "MEMBER"] as const;
 
 export default function MembersViewModal({

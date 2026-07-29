@@ -17,7 +17,7 @@ export default function ResendVerification() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/resend-verification`,
+        `${import.meta.env.VITE_API_URL || ""}/api/auth/resend-verification`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

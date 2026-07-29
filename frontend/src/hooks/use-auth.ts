@@ -79,7 +79,7 @@ export function useForgotPassword() {
   return useMutation({
     mutationFn: async (data: { email: string }) => {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/forget-password`,
+        `${import.meta.env.VITE_API_URL || ""}/api/auth/forget-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -137,7 +137,7 @@ export function useVerifyEmail() {
   return useMutation({
     mutationFn: async (data: { token: string }) => {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:8800"}/api/auth/verify-email`,
+        `${import.meta.env.VITE_API_URL || ""}/api/auth/verify-email`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

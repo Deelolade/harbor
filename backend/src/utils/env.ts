@@ -19,7 +19,10 @@ export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY as string;
 export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME as string;
 export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL as string;
 
+export const NODE_ENV = process.env.NODE_ENV;
+
 
 if (!DATABASE_URL) throw new Error("DATABASE_URL is missing");
 if (!SENDBYTE_SECRET) throw new Error("SENDBYTE_SECRET is missing");
 if (!ABLY_API_KEY) throw new Error("ABLY_API_KEY is missing");
+if (!NODE_ENV) throw new Error("NODE_ENV is missing");

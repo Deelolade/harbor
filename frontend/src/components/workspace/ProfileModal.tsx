@@ -3,7 +3,7 @@ import { FiX, FiCamera } from "react-icons/fi";
 import { authClient } from "../../lib/auth-client";
 import { toast } from "sonner";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface ProfileModalProps {
   user: any;

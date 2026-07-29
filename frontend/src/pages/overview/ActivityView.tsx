@@ -10,7 +10,7 @@ import {
   FiUserPlus,
 } from "react-icons/fi";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface Activity {
   id: string;

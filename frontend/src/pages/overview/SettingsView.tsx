@@ -3,7 +3,7 @@ import { Link, Outlet, useParams, useNavigate } from "react-router-dom";
 import { FiX, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function SettingsView() {
   return (

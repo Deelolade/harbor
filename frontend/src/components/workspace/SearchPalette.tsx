@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiSearch, FiCheckSquare, FiFolder, FiUser, FiTag } from "react-icons/fi";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface SearchResults {
   tasks: { id: string; title: string; subtitle: string; projectId: string }[];

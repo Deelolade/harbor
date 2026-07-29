@@ -21,7 +21,7 @@ import TaskModal from "../../components/workspace/TaskModal";
 import TaskCreateModal from "../../components/workspace/TaskCreateModal";
 import KanbanColumn from "../../components/workspace/KanbanColumn";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface Subtask {
   id: string;

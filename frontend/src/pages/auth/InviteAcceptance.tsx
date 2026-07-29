@@ -7,7 +7,7 @@ import Input from "../../components/ui/Input";
 import { toast } from "sonner";
 import { authClient } from "../../lib/auth-client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface InviteDetails {
   workspaceName: string;
