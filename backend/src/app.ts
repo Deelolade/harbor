@@ -18,6 +18,7 @@ import { activityRoutes } from "@/modules/workspace/task/activity.routes.js";
 import { notificationRoutes } from "@/modules/notification/notification.routes.js";
 import { PORT } from "@/utils/env.js";
 import multipart from "@fastify/multipart";
+import { uploadRoutes } from "@/modules/uploads/upload.routes.js";
 
 const fastify = Fastify({ logger: true });
 
@@ -99,6 +100,9 @@ await fastify.register(commentRoutes);
 await fastify.register(activityRoutes);
 await fastify.register(notificationRoutes);
 await fastify.register(searchRoutes);
+await fastify.register(uploadRoutes, {
+  prefix: '/api/v1'
+});
 
 fastify.listen(
   {
