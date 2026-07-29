@@ -10,7 +10,9 @@ import ResendVerification from "./pages/auth/ResendVerification";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import WorkspaceLayout from "./pages/overview/WorkspaceLayout";
 import HomeView from "./pages/overview/HomeView";
-import SettingsView from "./pages/overview/SettingsView";
+import SettingsView, { SettingsIndex } from "./pages/overview/SettingsView";
+import GeneralSettings from "./pages/overview/GeneralSettings";
+import BillingSettings from "./pages/overview/BillingSettings";
 import MembersView from "./pages/overview/MembersView";
 import ActivityView from "./pages/overview/ActivityView";
 import PlaceholderView from "./pages/overview/PlaceholderView";
@@ -55,7 +57,11 @@ export default function App() {
           path="clients"
           element={<PlaceholderView title="Client views" />}
         />
-        <Route path="settings" element={<SettingsView />} />
+        <Route path="settings" element={<SettingsView />} >
+          <Route index element={<SettingsIndex />} />
+          <Route path="general" element={<GeneralSettings />} />
+          <Route path="billing" element={<BillingSettings />} />
+        </Route>
         <Route path="activity" element={<ActivityView />} />
         <Route path="projects/:id" element={<ProjectView />} />
       </Route>
