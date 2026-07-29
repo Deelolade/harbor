@@ -180,7 +180,7 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { name } = request.body as UpdateWorkspaceInput;
+      const { name, image } = request.body as UpdateWorkspaceInput;
       if (
         name !== undefined &&
         (typeof name !== "string" || name.trim().length === 0)
@@ -190,9 +190,15 @@ export async function workspaceRoutes(fastify: FastifyInstance) {
           .send({ message: "Workspace name cannot be empty." });
       }
 
-      const updated = await workspaceService.update(id, {
-        ...(name !== undefined ? { name: name.trim() } : {}),
-      });
+      const updateData: Record<string, string> = {};
+      if (name !== undefined) updateData.name = name.trim();
+      if (image !== undefined) updateData.image = image;
+
+      if (Object.keys(updateData).length === 0) {
+        return reply.status(400).send({ message: "No fields to update." });
+      }
+
+      const updated = await workspaceService.update(id, updateData);
 
       return reply.send(updated);
     },

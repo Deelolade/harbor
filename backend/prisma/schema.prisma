@@ -95,6 +95,7 @@ model Verification {
 model Workspace {
   id          String            @id @default(cuid())
   name        String
+  image       String?
   ownerId     String
   owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   members     WorkspaceMember[]

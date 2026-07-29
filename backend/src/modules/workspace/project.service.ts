@@ -41,8 +41,9 @@ export const projectService = {
         createdBy: {
           select: { id: true, name: true, email: true, image: true },
         },
+        _count: { select: { boards: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
     });
   },
 
