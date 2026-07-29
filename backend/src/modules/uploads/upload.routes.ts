@@ -5,6 +5,7 @@ import { FastifyInstance } from "fastify";
 import crypto from "node:crypto";
 import { workspaceService } from "@/modules/workspace/workspace.service.js";
 import { getSessionUser } from "@/lib/session.js";
+import { prisma } from "@/lib/prisma.js";
 
 export const uploadRoutes = async (fastify: FastifyInstance) => {
   fastify.post("/upload/image", async (request, reply) => {
@@ -14,20 +15,19 @@ export const uploadRoutes = async (fastify: FastifyInstance) => {
         return reply.status(400).send({ message: "No file uploaded" });
       }
 
-      // workspaceId comes as a query parameter
-      const { workspaceId } = request.query as { workspaceId?: string };
-      if (!workspaceId) {
-        return reply.status(400).send({ message: "workspaceId query param is required" });
-      }
-
-      // Auth check — only workspace members can upload
+      // Auth is always required
       const user = await getSessionUser(request);
       if (!user) {
         return reply.status(401).send({ message: "Unauthorized" });
       }
-      const member = await workspaceService.getMember(workspaceId, user.id);
-      if (!member) {
-        return reply.status(403).send({ message: "Not a member of this workspace" });
+
+      // workspaceId is optional — if provided, verify membership
+      const { workspaceId } = request.query as { workspaceId?: string };
+      if (workspaceId) {
+        const member = await workspaceService.getMember(workspaceId, user.id);
+        if (!member) {
+          return reply.status(403).send({ message: "Not a member of this workspace" });
+        }
       }
 
       // types of images allowed
@@ -58,8 +58,15 @@ export const uploadRoutes = async (fastify: FastifyInstance) => {
       );
       const imageUrl = `${R2_PUBLIC_URL}/${key}`;
 
-      // Store imageUrl in the workspace record
-      await workspaceService.update(workspaceId, { image: imageUrl });
+      // Store in the right place depending on context
+      if (workspaceId) {
+        await workspaceService.update(workspaceId, { image: imageUrl });
+      } else {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { image: imageUrl },
+        });
+      }
 
       return reply.status(201).send({
         message: "Image uploaded successfully",
