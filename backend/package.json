@@ -61,12 +61,12 @@
     "split2": "^4.2.0",
     "thread-stream": "^4.2.0",
     "toad-cache": "^3.7.1",
+    "tsc-alias": "^1.9.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.0.1",
     "@types/pg": "^8.20.0",
-    "tsc-alias": "^1.9.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },
