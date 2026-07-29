@@ -132,7 +132,7 @@ export default function HomeView() {
     name: "",
     description: "",
     image: "",
-    visibility: "WORKSPACE" as const,
+    visibility: "WORKSPACE",
   });
 
   const createMutation = useMutation({
