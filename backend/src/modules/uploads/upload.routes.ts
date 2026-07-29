@@ -2,13 +2,32 @@ import { R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/utils/env.js";
 import { r2Client } from "@/utils/r2.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { FastifyInstance } from "fastify";
+import crypto from "node:crypto";
+import { workspaceService } from "@/modules/workspace/workspace.service.js";
+import { getSessionUser } from "@/lib/session.js";
 
 export const uploadRoutes = async (fastify: FastifyInstance) => {
   fastify.post("/upload/image", async (request, reply) => {
     try {
-      const file = request.file();
+      const file = await request.file();
       if (!file) {
         return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      // workspaceId comes as a query parameter
+      const { workspaceId } = request.query as { workspaceId?: string };
+      if (!workspaceId) {
+        return reply.status(400).send({ message: "workspaceId query param is required" });
+      }
+
+      // Auth check — only workspace members can upload
+      const user = await getSessionUser(request);
+      if (!user) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+      const member = await workspaceService.getMember(workspaceId, user.id);
+      if (!member) {
+        return reply.status(403).send({ message: "Not a member of this workspace" });
       }
 
       // types of images allowed
@@ -38,6 +57,9 @@ export const uploadRoutes = async (fastify: FastifyInstance) => {
         }),
       );
       const imageUrl = `${R2_PUBLIC_URL}/${key}`;
+
+      // Store imageUrl in the workspace record
+      await workspaceService.update(workspaceId, { image: imageUrl });
 
       return reply.status(201).send({
         message: "Image uploaded successfully",

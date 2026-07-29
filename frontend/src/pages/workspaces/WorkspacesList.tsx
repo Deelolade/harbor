@@ -10,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 interface WorkspaceCard {
   id: string;
   name: string;
+  image?: string | null;
   ownerId: string;
   owner: { id: string; name: string; image?: string };
   _count: { members: number };
@@ -203,8 +204,12 @@ function WorkspaceCard({
       className="flex flex-col gap-4 rounded-2xl border border-white/[0.04] bg-[#111318] p-5 text-left hover:border-white/[0.08] transition-colors"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.04] text-sm font-bold text-zinc-400">
-          {initial}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-sm font-bold text-zinc-400 overflow-hidden">
+          {workspace.image ? (
+            <img src={workspace.image} alt="" className="h-full w-full object-cover" />
+          ) : (
+            initial
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold">{workspace.name}</p>

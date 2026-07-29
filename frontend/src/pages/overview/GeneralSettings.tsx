@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FiChevronLeft } from "react-icons/fi";
@@ -33,6 +33,8 @@ export default function GeneralSettings() {
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [initialized, setInitialized] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync fields when workspace loads (only once)
   if (workspace && !initialized) {
@@ -56,7 +58,7 @@ export default function GeneralSettings() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["workspace", workspaceId], data.name);
+      queryClient.setQueryData(["workspace", workspaceId], data);
       queryClient.setQueryData(["workspace", workspaceId, "full"], data);
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success("Workspace updated.");
@@ -65,6 +67,48 @@ export default function GeneralSettings() {
       toast.error(err?.message || "Failed to update workspace.");
     },
   });
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(
+        `${API_URL}/api/v1/upload/image?workspaceId=${workspaceId}`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        },
+      );
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || "Upload failed.");
+      }
+
+      const data = await res.json();
+      setImage(data.url);
+
+      // Refresh workspace caches (backend already stored the image)
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -95,7 +139,6 @@ export default function GeneralSettings() {
 
   return (
     <div>
-      {/* Back link */}
       <Link
         to={`/workspace/${workspaceId}/settings`}
         className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors mb-6"
@@ -116,8 +159,20 @@ export default function GeneralSettings() {
             Workspace image
           </label>
           <div className="flex items-start gap-4">
-            {/* Preview */}
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#1F1F23] bg-[#0D0E12]">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#1F1F23] bg-[#0D0E12] transition-colors hover:border-white/[0.12] disabled:opacity-60"
+            >
               {image ? (
                 <img
                   src={image}
@@ -132,19 +187,30 @@ export default function GeneralSettings() {
                   {workspace?.name?.charAt(0).toUpperCase() || "?"}
                 </div>
               )}
-            </div>
-            {/* Input */}
+
+              {uploading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-[11px] font-medium text-white">
+                    {image ? "Change" : "Upload"}
+                  </span>
+                </div>
+              )}
+            </button>
+
             <div className="flex-1">
-              <input
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://example.com/logo.png"
-                className="h-[48px] w-full rounded-xl border border-[#1F1F23] bg-[#0D0E12] px-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/15"
-              />
+              <p className="text-[13px] text-zinc-500">
+                Click the thumbnail to upload an image. PNG, JPG, WebP, or GIF
+                up to 2MB.
+              </p>
               {image && (
                 <button
+                  type="button"
                   onClick={() => setImage("")}
-                  className="mt-2 text-[13px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="mt-2 text-[13px] text-zinc-400 hover:text-red-400 transition-colors"
                 >
                   Remove image
                 </button>

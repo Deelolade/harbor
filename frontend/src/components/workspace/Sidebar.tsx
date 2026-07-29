@@ -27,6 +27,7 @@ interface ProjectItem {
 interface WorkspaceInfo {
   id: string;
   name: string;
+  image?: string | null;
   ownerId: string;
   _count: { members: number };
 }
@@ -105,7 +106,6 @@ export default function Sidebar({
 
   const navItems = [
     { icon: <FiHome size={15} />, label: "Home", path: basePath },
-    // { icon: <FiInbox size={15} />, label: "Inbox", path: `${basePath}/inbox`, badge: "3" },
     {
       icon: <FiActivity size={15} />,
       label: "Activity",
@@ -119,7 +119,6 @@ export default function Sidebar({
       label: "Members",
       path: `${basePath}/members`,
     },
-    // { icon: <FiEye size={15} />, label: "Client views", path: `${basePath}/clients` },
     {
       icon: <FiSettings size={15} />,
       label: "Settings",
@@ -176,7 +175,7 @@ export default function Sidebar({
             onClick={() => setSwitcherOpen(!switcherOpen)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-white hover:bg-white/[0.04] transition-colors"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-[10px] font-bold text-amber-400 overflow-hidden">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/10 text-[10px] font-bold text-amber-400 overflow-hidden">
               {workspaceImage ? (
                 <img src={workspaceImage} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -207,8 +206,12 @@ export default function Sidebar({
                     }}
                     className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-zinc-400 hover:bg-white/[0.04] hover:text-white transition-colors"
                   >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/[0.04] text-[10px] font-bold">
-                      {ws.name.charAt(0).toUpperCase()}
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-[10px] font-bold overflow-hidden">
+                      {ws.image ? (
+                        <img src={ws.image} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        ws.name.charAt(0).toUpperCase()
+                      )}
                     </span>
                     <span className="truncate">{ws.name}</span>
                   </button>
