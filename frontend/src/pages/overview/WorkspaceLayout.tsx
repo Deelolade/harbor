@@ -26,10 +26,10 @@ export default function WorkspaceLayout() {
       }).then((r) => (r.ok ? r.json() : null)),
     enabled: !!workspaceId,
     staleTime: 5 * 60 * 1000,
-    select: (data) => data?.name || "",
   });
 
-  const workspaceName = workspace || "Workspace";
+  const workspaceName = workspace?.name || "Workspace";
+  const workspaceImage = workspace?.image || null;
 
   // Activate real-time activity stream for this workspace
   useActivityStream(workspaceId);
@@ -42,6 +42,7 @@ export default function WorkspaceLayout() {
       <Sidebar
         workspaceId={workspaceId || ""}
         workspaceName={workspaceName}
+        workspaceImage={workspaceImage}
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
         onProfileClick={() => setProfileOpen(true)}

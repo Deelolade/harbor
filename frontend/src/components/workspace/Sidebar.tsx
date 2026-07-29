@@ -34,6 +34,7 @@ interface WorkspaceInfo {
 interface SidebarProps {
   workspaceId: string;
   workspaceName: string;
+  workspaceImage: string | null;
   collapsed: boolean;
   onToggle: () => void;
   onProfileClick: () => void;
@@ -42,6 +43,7 @@ interface SidebarProps {
 export default function Sidebar({
   workspaceId,
   workspaceName,
+  workspaceImage,
   collapsed,
   onToggle,
   onProfileClick,
@@ -174,8 +176,12 @@ export default function Sidebar({
             onClick={() => setSwitcherOpen(!switcherOpen)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-white hover:bg-white/[0.04] transition-colors"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-[10px] font-bold text-amber-400">
-              {workspaceName.charAt(0).toUpperCase()}
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-[10px] font-bold text-amber-400 overflow-hidden">
+              {workspaceImage ? (
+                <img src={workspaceImage} alt="" className="h-full w-full object-cover" />
+              ) : (
+                workspaceName.charAt(0).toUpperCase()
+              )}
             </span>
             <span className="flex-1 truncate text-left">{workspaceName}</span>
             <FiChevronDown

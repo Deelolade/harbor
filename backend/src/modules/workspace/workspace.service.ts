@@ -7,6 +7,7 @@ export interface CreateWorkspaceInput {
 
 export interface UpdateWorkspaceInput {
   name?: string;
+  image?: string;
 }
 
 export interface AddMemberInput {

@@ -17,6 +17,7 @@ import { searchRoutes } from "@/modules/workspace/search.routes.js";
 import { activityRoutes } from "@/modules/workspace/task/activity.routes.js";
 import { notificationRoutes } from "@/modules/notification/notification.routes.js";
 import { PORT } from "@/utils/env.js";
+import multipart from "@fastify/multipart";
 
 const fastify = Fastify({ logger: true });
 
@@ -80,6 +81,12 @@ fastify.get("/api/ably/sse", async (request, reply) => {
     reply.raw.write(decoder.decode(value));
   }
   reply.raw.end();
+});
+
+await fastify.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
 });
 
 await fastify.register(workspaceRoutes);
