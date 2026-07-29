@@ -6,15 +6,28 @@ import {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   FRONTEND_URL,
-  BACKEND_URL,
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
 } from "@/utils/env.js";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  baseURL: BACKEND_URL,
   trustedOrigins: [FRONTEND_URL],
+
+  socialProviders: {
+    google: {
+      prompt: "select_account",
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      storeStateStrategy: "database",
+    },
+    github: {
+      prompt: "select_account",
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
+      storeStateStrategy: "database",
+    },
+  },
 
   emailAndPassword: {
     enabled: true,
@@ -26,19 +39,6 @@ export const auth = betterAuth({
       } catch (err) {
         console.error("[auth] Password reset email failed:", err);
       }
-    },
-  },
-
-  socialProviders: {
-    google: {
-      prompt: "select_account",
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-    },
-    github: {
-      prompt: "select_account",
-      clientId: GITHUB_CLIENT_ID,
-      clientSecret: GITHUB_CLIENT_SECRET,
     },
   },
 });
