@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { FiPlus, FiX } from "react-icons/fi";
 import { toast } from "sonner";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { authClient } from "../../lib/auth-client";
+import MembersViewModal from "../../components/modals/membersviewmodal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
@@ -37,8 +40,13 @@ export default function MembersView() {
     enabled: !!workspaceId,
   });
 
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user?.id;
+  const currentMember = members.find((m) => m.userId === currentUserId);
+
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
 
   const inviteMutation = useMutation({
     mutationFn: async () => {
@@ -109,6 +117,23 @@ export default function MembersView() {
               >
                 {m.role}
               </span>
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setOpenMenuUserId(openMenuUserId === m.userId ? null : m.userId)
+                  }
+                  className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  <BsThreeDotsVertical />
+                </button>
+                <MembersViewModal
+                  showModal={openMenuUserId === m.userId}
+                  onClose={() => setOpenMenuUserId(null)}
+                  member={m}
+                  currentMember={currentMember}
+                  workspaceId={workspaceId!}
+                />
+              </div>
             </div>
           ))}
         </div>
