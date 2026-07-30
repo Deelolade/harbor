@@ -25,13 +25,11 @@ export const auth = betterAuth({
       prompt: "select_account",
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      storeStateStrategy: "database",
     },
     github: {
       prompt: "select_account",
       clientId: GITHUB_CLIENT_ID,
       clientSecret: GITHUB_CLIENT_SECRET,
-      storeStateStrategy: "database",
     },
   },
 
