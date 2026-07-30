@@ -12,8 +12,6 @@ function generateToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
-/** Auto-create a personal workspace for a brand-new user.
- *  Only call this for self-service signups — never for invite-based signups. */
 async function createPersonalWorkspace(userId: string, userName: string) {
   const workspaceName = userName ? `${userName}'s Workspace` : "My Workspace";
 
@@ -33,7 +31,6 @@ export const authRoutes = async (
   reply: FastifyReply,
 ) => {
   try {
-    // ── Normalize email to lowercase for all requests ──
     const body = request.body as Record<string, unknown> | undefined;
     if (body?.email && typeof body.email === "string") {
       body.email = body.email.toLowerCase().trim();
@@ -47,7 +44,6 @@ export const authRoutes = async (
           where: { email },
         });
         if (existing) {
-          // If the account is unverified, resend the verification email
           if (!existing.emailVerified) {
             const token = generateToken();
             const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -94,7 +90,6 @@ export const authRoutes = async (
 
       const user = await prisma.user.findFirst({ where: { email } });
       if (!user || user.emailVerified) {
-        // Don't reveal whether the email exists — always return success
         return reply.status(200).send({});
       }
 
@@ -146,36 +141,20 @@ export const authRoutes = async (
     }
 
     // ── Forward to better-auth ──
-    const url = new URL(request.url, `http://${request.headers.host}`);
+    const proto = (request.headers["x-forwarded-proto"] as string) || request.protocol;
+    const url = new URL(request.url, `${proto}://${request.headers.host}`);
 
     const req = new Request(url.toString(), {
       method: request.method,
       headers: fromNodeHeaders(request.headers),
       ...(request.body ? { body: JSON.stringify(request.body) } : {}),
     });
-    console.log(req.url);
 
     const response = await auth.handler(req);
-    console.log("Incoming:", request.method, request.url);
-    console.log("Forwarding:", req.method, req.url);
-
-    // const response = await auth.handler(req);
-
-    console.log("Status:", response.status);
-    console.log("Location:", response.headers.get("location"));
-    console.log("Body:", await response.clone().text());
-
-    console.log({
-      status: response.status,
-      url: req.url,
-      body: await response.clone().text(),
-    });
 
     // OAuth redirects need reply.redirect() to work in popups
     const location = response.headers.get("location");
     if (location && response.status >= 300 && response.status < 400) {
-      // Copy Set-Cookie headers BEFORE redirecting — the browser needs the
-      // session cookie so subsequent requests are authenticated.
       response.headers.forEach((value, key) => {
         if (key.toLowerCase() === "set-cookie") reply.header(key, value);
       });
@@ -212,7 +191,6 @@ export const authRoutes = async (
           request.log.error(err, "Failed to send verification email"),
         );
 
-        // Set DiceBear avatar + auto-create workspace in parallel
         const seed = (body?.name as string) || email;
         const avatarUrl = `https://api.dicebear.com/10.x/lorelei/svg?seed=${encodeURIComponent(seed)}`;
         const displayName = (body?.name as string) || email.split("@")[0];

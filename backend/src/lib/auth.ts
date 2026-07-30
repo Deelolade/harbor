@@ -8,12 +8,18 @@ import {
   FRONTEND_URL,
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
+  BETTER_AUTH_URL,
+  BACKEND_URL,
 } from "@/utils/env.js";
 
+console.log({
+  BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+  FRONTEND_URL: process.env.FRONTEND_URL,
+  BACKEND_URL: process.env.BACKEND_URL,
+});
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  trustedOrigins: [FRONTEND_URL],
-
+  trustedOrigins: [FRONTEND_URL, "https://harbor.deelolade.com.ng","http://localhost:5173", ],
   socialProviders: {
     google: {
       prompt: "select_account",
