@@ -12,6 +12,8 @@ export const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8800";
 export const ABLY_API_KEY = process.env.ABLY_API_KEY as string;
 export const PORT = Number(process.env.PORT) || 8800;
 
+export const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL as string;
+
 // cloudflare setup
 export const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID as string;
 export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID as string;
