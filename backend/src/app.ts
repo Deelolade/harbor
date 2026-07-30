@@ -6,6 +6,7 @@ import { COOKIE_SECRET, FRONTEND_URL } from "@/utils/env.js";
 import { getAblyToken } from "@/lib/ably.js";
 import { auth } from "@/lib/auth.js";
 import { authRoutes } from "@/modules/auth/auth.routes.js";
+import { accountRoutes } from "@/modules/auth/account.routes.js";
 import { workspaceRoutes } from "@/modules/workspace/workspace.routes.js";
 import { projectRoutes } from "@/modules/workspace/project.routes.js";
 import { boardRoutes } from "@/modules/workspace/board/board.routes.js";
@@ -37,6 +38,7 @@ await fastify.register(cors, {
 
 await fastify.register(compress, { global: true, threshold: 1024 });
 
+// Better Auth — all /api/auth/* routes go through the official node handler
 fastify.route({
   method: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   url: "/api/auth/*",
@@ -86,9 +88,12 @@ fastify.get("/api/ably/sse", async (request, reply) => {
 
 await fastify.register(multipart, {
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 10 * 1024 * 1024,
   },
 });
+
+// Custom account endpoints (outside /api/auth/*)
+await fastify.register(accountRoutes);
 
 await fastify.register(workspaceRoutes);
 await fastify.register(projectRoutes);
@@ -101,7 +106,7 @@ await fastify.register(activityRoutes);
 await fastify.register(notificationRoutes);
 await fastify.register(searchRoutes);
 await fastify.register(uploadRoutes, {
-  prefix: '/api/v1'
+  prefix: "/api/v1",
 });
 
 fastify.listen(
