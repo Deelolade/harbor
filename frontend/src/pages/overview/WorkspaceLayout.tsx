@@ -31,10 +31,7 @@ export default function WorkspaceLayout() {
   const workspaceName = workspace?.name || "Workspace";
   const workspaceImage = workspace?.image || null;
 
-  // Activate real-time activity stream for this workspace
   useActivityStream(workspaceId);
-
-  // Command palette
   const palette = useCommandPalette();
 
   return (
@@ -69,6 +66,7 @@ export default function WorkspaceLayout() {
         <ProfileModal
           user={session?.user}
           onClose={() => setProfileOpen(false)}
+          onUpdate={() => authClient.getSession()}
         />
       )}
 

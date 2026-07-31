@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/utils/email.js";
+import { generateToken } from "@/modules/auth/account.service.js";
 import {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
@@ -9,11 +10,6 @@ import {
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
 } from "@/utils/env.js";
-import crypto from "node:crypto";
-
-function generateToken() {
-  return crypto.randomBytes(32).toString("hex");
-}
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -27,14 +23,10 @@ export const auth = betterAuth({
           try {
             const name = user.name || user.email.split("@")[0];
             const workspaceName = `${name}'s Workspace`;
-
             const avatarUrl = `https://api.dicebear.com/10.x/lorelei/svg?seed=${encodeURIComponent(name)}`;
 
             await prisma.$transaction([
-              prisma.user.update({
-                where: { id: user.id },
-                data: { image: avatarUrl },
-              }),
+              prisma.user.update({ where: { id: user.id }, data: { image: avatarUrl } }),
               prisma.workspace.create({
                 data: {
                   name: workspaceName,
@@ -55,8 +47,7 @@ export const auth = betterAuth({
                 },
               });
 
-              const verifyUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
-              sendVerificationEmail(user.email, verifyUrl).catch(() => {});
+              sendVerificationEmail(user.email, `${FRONTEND_URL}/verify-email?token=${token}`).catch(() => {});
             }
           } catch (err) {
             console.error("[auth] Post-signup hook failed:", err);

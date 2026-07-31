@@ -71,8 +71,24 @@ export const inviteAcceptanceSchema = z
     path: ["confirmPassword"],
   });
 
+export const profileSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(64, "Name must be 64 characters or less"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  image: z
+    .string()
+    .max(2048, "Image URL is too long")
+    .optional(),
+});
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type InviteAcceptanceInput = z.infer<typeof inviteAcceptanceSchema>;
+export type ProfileInput = z.infer<typeof profileSchema>;
