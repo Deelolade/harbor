@@ -38,7 +38,6 @@ await fastify.register(cors, {
 
 await fastify.register(compress, { global: true, threshold: 1024 });
 
-// Better Auth — all /api/auth/* routes go through the official node handler
 fastify.route({
   method: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   url: "/api/auth/*",
@@ -70,6 +69,8 @@ fastify.get("/api/ably/sse", async (request, reply) => {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
+    "Access-Control-Allow-Origin": (request.headers.origin as string) || FRONTEND_URL,
+    "Access-Control-Allow-Credentials": "true",
   });
 
   const reader = esRes.body?.getReader();
@@ -92,9 +93,7 @@ await fastify.register(multipart, {
   },
 });
 
-// Custom account endpoints (outside /api/auth/*)
 await fastify.register(accountRoutes);
-
 await fastify.register(workspaceRoutes);
 await fastify.register(projectRoutes);
 await fastify.register(boardRoutes);

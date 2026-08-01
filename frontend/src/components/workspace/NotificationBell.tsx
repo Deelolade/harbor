@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiBell } from "react-icons/fi";
+import {
+  FiBell,
+  FiClipboard,
+  FiMessageSquare,
+  FiAtSign,
+  FiCheckCircle,
+  FiRefreshCw,
+} from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -63,15 +70,15 @@ export default function NotificationBell() {
     },
   });
 
-  const icons: Record<string, string> = {
-    assignment: "📋",
-    comment: "💬",
-    mention: "@",
-    moved_to_done: "✅",
-    moved_from_done: "🔄",
-    reassigned: "🔄",
+  const icons: Record<string, React.ReactNode> = {
+    assignment: <FiClipboard size={16} />,
+    comment: <FiMessageSquare size={16} />,
+    mention: <FiAtSign size={16} />,
+    moved_to_done: <FiCheckCircle size={16} />,
+    moved_from_done: <FiRefreshCw size={16} />,
+    reassigned: <FiRefreshCw size={16} />,
   };
-  console.log(notifications);
+
   return (
     <div className="relative">
       <button
@@ -124,8 +131,8 @@ export default function NotificationBell() {
                       !n.read ? "bg-blue-500/5" : ""
                     }`}
                   >
-                    <span className="mt-0.5 text-lg">
-                      {icons[n.type] || "🔔"}
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-zinc-400">
+                      {icons[n.type] || <FiBell size={16} />}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p

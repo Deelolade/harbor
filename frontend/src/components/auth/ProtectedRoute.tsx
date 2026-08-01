@@ -8,7 +8,6 @@ export default function ProtectedRoute({
 }) {
   const { data: session, isPending } = authClient.useSession();
 
-  console.log("[ProtectedRoute]", { isPending, hasSession: !!session });
 
   if (isPending) {
     return (

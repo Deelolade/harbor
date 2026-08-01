@@ -10,6 +10,7 @@ import {
   FiLayers,
   FiActivity,
   FiClock,
+  FiChevronRight,
   FiGrid,
 } from "react-icons/fi";
 import { toast } from "sonner";
@@ -340,9 +341,17 @@ function ProjectCard({
   const boardCount = project._count?.boards ?? 0;
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group flex flex-col gap-4 rounded-2xl border border-white/[0.05] bg-[#111318] p-5 text-left transition-all duration-200 hover:border-white/[0.10] hover:bg-[#13151A] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="group flex flex-col gap-4 rounded-2xl border border-white/[0.05] bg-[#111318] p-5 text-left transition-all duration-200 hover:border-white/[0.10] hover:bg-[#13151A] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 cursor-pointer"
     >
       {/* Header row */}
       <div className="flex items-start justify-between">
@@ -385,7 +394,7 @@ function ProjectCard({
           {formatDate(project.updatedAt)}
         </span>
       </div>
-    </button>
+    </div>
   );
 }
 
