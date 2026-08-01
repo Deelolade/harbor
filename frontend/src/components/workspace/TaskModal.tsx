@@ -46,18 +46,8 @@ interface Task {
   status: string;
   dueDate?: string;
   assignee?: { id: string; name: string; email: string; image?: string } | null;
-  createdBy?: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string;
-  } | null;
-  updatedBy?: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string;
-  } | null;
+  createdBy?: { id: string; name: string; email: string; image?: string } | null;
+  updatedBy?: { id: string; name: string; email: string; image?: string } | null;
   subtasks: Subtask[];
   labels: Label[];
   attachments: Attachment[];
@@ -453,23 +443,19 @@ export default function TaskModal({
                     const formData = new FormData();
                     formData.append("file", file);
                     try {
-                      const uploadRes = await fetch(`${API_URL}/api/v1/upload/image`, {
+                      const res = await fetch(`${API_URL}/attachments/upload?taskId=${initialTask.id}`, {
                         method: "POST",
                         body: formData,
                         credentials: "include",
                       });
-                      if (!uploadRes.ok) throw new Error("Upload failed");
-                      const { url } = await uploadRes.json();
-                      await fetch(`${API_URL}/api/tasks/${initialTask.id}/attachments`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: file.name, url }),
-                        credentials: "include",
-                      });
+                      if (!res.ok) {
+                        const d = await res.json().catch(() => ({}));
+                        throw new Error(d.message || "Upload failed");
+                      }
                       queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
                       toast.success("File attached.");
-                    } catch {
-                      toast.error("Failed to upload file.");
+                    } catch (err: any) {
+                      toast.error(err?.message || "Failed to upload file.");
                     }
                   }}
                   id={`attachment-upload-${initialTask.id}`}
@@ -491,9 +477,20 @@ export default function TaskModal({
                       <button
                         onClick={async () => {
                           if (!confirm(`Remove "${a.name}"?`)) return;
-                          await fetch(`${API_URL}/api/attachments/${a.id}`, { method: "DELETE", credentials: "include" });
-                          queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
-                          toast.success("Attachment removed.");
+                          try {
+                            const res = await fetch(`${API_URL}/attachments/${a.id}`, {
+                              method: "DELETE",
+                              credentials: "include",
+                            });
+                            if (!res.ok) {
+                              const d = await res.json().catch(() => ({}));
+                              throw new Error(d.message || "Failed to remove");
+                            }
+                            queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
+                            toast.success("Attachment removed.");
+                          } catch (err: any) {
+                            toast.error(err?.message || "Failed to remove attachment.");
+                          }
                         }}
                         className="rounded p-0.5 text-zinc-600 hover:bg-red-500/10 hover:text-red-400 shrink-0"
                       >
