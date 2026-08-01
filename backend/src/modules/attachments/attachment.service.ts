@@ -55,6 +55,17 @@ export const attachmentService = {
     return attachment;
   },
 
+  /** Rename an attachment */
+  async rename(id: string, name: string) {
+    const attachment = await prisma.attachment.findUnique({ where: { id } });
+    if (!attachment) return null;
+
+    return prisma.attachment.update({
+      where: { id },
+      data: { name },
+    });
+  },
+
   /** Delete an attachment by ID — removes from DB and R2 */
   async delete(id: string) {
     const attachment = await prisma.attachment.findUnique({ where: { id } });

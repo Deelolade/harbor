@@ -12,6 +12,7 @@ import {
   FiPaperclip,
   FiMessageSquare,
 } from "react-icons/fi";
+import AttachmentModal from "./AttachmentModal";
 import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -112,6 +113,8 @@ export default function TaskModal({
   const [labelName, setLabelName] = useState("");
   const [labelColor, setLabelColor] = useState(labelColors[0]);
   const [showAddLabel, setShowAddLabel] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
 
   useEffect(() => {
     if (!initialTask) return;
@@ -252,7 +255,7 @@ export default function TaskModal({
     );
   }
 
-  return (
+  return (<>
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-12">
       <div className="w-full max-w-2xl rounded-2xl border border-white/[0.06] bg-[#111318] shadow-2xl mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
@@ -471,31 +474,54 @@ export default function TaskModal({
                 <div className="space-y-0.5">
                   {initialTask.attachments.map((a) => (
                     <div key={a.id} className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] hover:bg-white/[0.04]">
-                      <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 flex-1 min-w-0 text-zinc-400 hover:text-white">
-                        <FiPaperclip size={13} /> <span className="truncate">{a.name}</span>
-                      </a>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`Remove "${a.name}"?`)) return;
-                          try {
-                            const res = await fetch(`${API_URL}/attachments/${a.id}`, {
-                              method: "DELETE",
-                              credentials: "include",
-                            });
-                            if (!res.ok) {
-                              const d = await res.json().catch(() => ({}));
-                              throw new Error(d.message || "Failed to remove");
-                            }
-                            queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
-                            toast.success("Attachment removed.");
-                          } catch (err: any) {
-                            toast.error(err?.message || "Failed to remove attachment.");
-                          }
-                        }}
-                        className="rounded p-0.5 text-zinc-600 hover:bg-red-500/10 hover:text-red-400 shrink-0"
-                      >
-                        <FiX size={13} />
-                      </button>
+                      {confirmDeleteId === a.id ? (
+                        <>
+                          <span className="flex-1 text-[12px] text-zinc-400">
+                            Remove <span className="text-zinc-300 font-medium truncate">{a.name}</span>?
+                          </span>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`${API_URL}/attachments/${a.id}`, {
+                                  method: "DELETE",
+                                  credentials: "include",
+                                });
+                                if (!res.ok) {
+                                  const d = await res.json().catch(() => ({}));
+                                  throw new Error(d.message || "Failed to remove");
+                                }
+                                queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
+                                toast.success("Attachment removed.");
+                              } catch (err: any) {
+                                toast.error(err?.message || "Failed to remove attachment.");
+                              } finally {
+                                setConfirmDeleteId(null);
+                              }
+                            }}
+                            className="rounded px-2 py-0.5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => setSelectedAttachment(a)} className="flex items-center gap-2 flex-1 min-w-0 text-zinc-400 hover:text-white text-left cursor-pointer bg-transparent border-0 p-0">
+                            <FiPaperclip size={13} /> <span className="truncate">{a.name}</span>
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(a.id)}
+                            className="rounded p-0.5 text-zinc-600 hover:bg-red-500/10 hover:text-red-400 shrink-0"
+                          >
+                            <FiX size={13} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -632,5 +658,12 @@ export default function TaskModal({
         </div>
       </div>
     </div>
-  );
+    {selectedAttachment && (
+      <AttachmentModal
+        attachment={selectedAttachment}
+        onClose={() => setSelectedAttachment(null)}
+        onUpdated={invalidate}
+      />
+    )}
+  </> );
 }

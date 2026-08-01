@@ -119,6 +119,43 @@ export async function attachmentUploadRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ── Rename an attachment ──
+  fastify.patch("/attachments/:id", async (request, reply) => {
+    try {
+      const user = await getSessionUser(request);
+      if (!user) return reply.status(401).send({ message: "Unauthorized" });
+
+      const { id } = request.params as { id: string };
+      if (!id) return reply.status(400).send({ message: "Attachment ID is required." });
+
+      const { name } = (request.body || {}) as { name?: string };
+      if (!name || !name.trim()) {
+        return reply.status(400).send({ message: "Name is required." });
+      }
+      if (name.length > 255) {
+        return reply.status(400).send({ message: "Name too long." });
+      }
+
+      const updated = await attachmentService.rename(id, name.trim());
+      if (!updated) {
+        return reply.status(404).send({ message: "Attachment not found" });
+      }
+
+      return reply.send({
+        message: "Attachment renamed",
+        attachment: {
+          id: updated.id,
+          name: updated.name,
+          url: updated.url,
+          createdAt: updated.createdAt,
+        },
+      });
+    } catch (error: any) {
+      request.log.error(error);
+      return reply.status(500).send({ message: "Failed to rename attachment" });
+    }
+  });
+
   // ── Delete an attachment ──
   fastify.delete("/attachments/:id", async (request, reply) => {
     try {
