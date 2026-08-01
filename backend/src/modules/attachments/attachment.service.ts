@@ -1,10 +1,11 @@
 import { R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/utils/env.js";
 import { r2Client } from "@/utils/r2.js";
-import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma.js";
 import { FILE_TYPES } from "./attachment.file-types.js";
-import { keyFromUrl, validateMagicBytes } from "./attachment.helpers.js";
+import { keyFromUrl, validateMagicBytes, extractExtension } from "./attachment.helpers.js";
+import { ALLOWED_EXTENSIONS } from "./attachment.file-types.js";
 
 export interface UploadInput {
   filename: string;
@@ -55,14 +56,58 @@ export const attachmentService = {
     return attachment;
   },
 
-  /** Rename an attachment */
-  async rename(id: string, name: string) {
+  /** Rename an attachment — copies R2 object to a new key, deletes old, updates DB */
+  async rename(id: string, newName: string) {
     const attachment = await prisma.attachment.findUnique({ where: { id } });
     if (!attachment) return null;
 
+    const oldKey = keyFromUrl(attachment.url);
+    const oldExt = extractExtension(attachment.name);
+
+    // Determine the new extension:
+    // Use the extension from newName if provided and valid,
+    // otherwise fall back to the original extension.
+    let newExt = extractExtension(newName).toLowerCase();
+    if (!newExt || !(ALLOWED_EXTENSIONS as readonly string[]).includes(newExt)) {
+      newExt = oldExt;
+      // Append original extension to the name if user didn't provide one
+      if (!extractExtension(newName)) {
+        newName = `${newName}.${newExt}`;
+      }
+    }
+
+    // If there's no R2 key (shouldn't happen, but handle gracefully),
+    // just update the DB name.
+    if (!oldKey) {
+      return prisma.attachment.update({
+        where: { id },
+        data: { name: newName },
+      });
+    }
+
+    // Only touch R2 if the key actually changes
+    const newKey = `attachments/${crypto.randomUUID()}.${newExt}`;
+
+    // Copy object to new key within R2
+    await r2Client.send(
+      new CopyObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        CopySource: `${R2_BUCKET_NAME}/${oldKey}`,
+        Key: newKey,
+      }),
+    );
+
+    // Delete old object (fire-and-forget)
+    r2Client
+      .send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: oldKey }))
+      .catch(() => {});
+
+    const newUrl = `${R2_PUBLIC_URL}/${newKey}`;
+
+    // Update DB with new name and new URL
     return prisma.attachment.update({
       where: { id },
-      data: { name },
+      data: { name: newName, url: newUrl },
     });
   },
 

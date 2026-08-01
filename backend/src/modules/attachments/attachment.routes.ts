@@ -152,7 +152,8 @@ export async function attachmentUploadRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error(error);
-      return reply.status(500).send({ message: "Failed to rename attachment" });
+      const statusCode = error.statusCode ?? 500;
+      return reply.status(statusCode).send({ message: error.message ?? "Failed to rename attachment" });
     }
   });
 
