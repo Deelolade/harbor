@@ -435,26 +435,77 @@ export default function TaskModal({
               </div>
             </div>
 
-            {initialTask.attachments?.length > 0 && (
-              <div>
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-600 mb-2">
+            {/* Attachments */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
                   <FiPaperclip size={11} /> Attachments
+                  {initialTask.attachments?.length > 0 && (
+                    <span className="text-zinc-500">({initialTask.attachments.length})</span>
+                  )}
                 </label>
-                <div className="space-y-1">
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    try {
+                      const uploadRes = await fetch(`${API_URL}/api/v1/upload/image`, {
+                        method: "POST",
+                        body: formData,
+                        credentials: "include",
+                      });
+                      if (!uploadRes.ok) throw new Error("Upload failed");
+                      const { url } = await uploadRes.json();
+                      await fetch(`${API_URL}/api/tasks/${initialTask.id}/attachments`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: file.name, url }),
+                        credentials: "include",
+                      });
+                      queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
+                      toast.success("File attached.");
+                    } catch {
+                      toast.error("Failed to upload file.");
+                    }
+                  }}
+                  id={`attachment-upload-${initialTask.id}`}
+                />
+                <label
+                  htmlFor={`attachment-upload-${initialTask.id}`}
+                  className="cursor-pointer rounded-md p-1 text-zinc-600 hover:bg-white/[0.06] hover:text-white transition-colors"
+                >
+                  <FiPlus size={14} />
+                </label>
+              </div>
+              {initialTask.attachments?.length > 0 ? (
+                <div className="space-y-0.5">
                   {initialTask.attachments.map((a) => (
-                    <a
-                      key={a.id}
-                      href={a.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-zinc-400 hover:bg-white/[0.04] hover:text-white"
-                    >
-                      <FiPaperclip size={13} /> {a.name}
-                    </a>
+                    <div key={a.id} className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] hover:bg-white/[0.04]">
+                      <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 flex-1 min-w-0 text-zinc-400 hover:text-white">
+                        <FiPaperclip size={13} /> <span className="truncate">{a.name}</span>
+                      </a>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Remove "${a.name}"?`)) return;
+                          await fetch(`${API_URL}/api/attachments/${a.id}`, { method: "DELETE", credentials: "include" });
+                          queryClient.invalidateQueries({ queryKey: ["task", initialTask.id] });
+                          toast.success("Attachment removed.");
+                        }}
+                        className="rounded p-0.5 text-zinc-600 hover:bg-red-500/10 hover:text-red-400 shrink-0"
+                      >
+                        <FiX size={13} />
+                      </button>
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-[12px] text-zinc-600 px-3">No files attached.</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">

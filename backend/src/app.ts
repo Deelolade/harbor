@@ -14,12 +14,14 @@ import { columnRoutes } from "@/modules/workspace/board/column.routes.js";
 import { taskRoutes } from "@/modules/workspace/task/task.routes.js";
 import { subtaskRoutes } from "@/modules/workspace/task/subtask.routes.js";
 import { commentRoutes } from "@/modules/workspace/task/comment.routes.js";
+import { attachmentRoutes } from "@/modules/workspace/task/attachment.routes.js";
 import { searchRoutes } from "@/modules/workspace/search.routes.js";
 import { activityRoutes } from "@/modules/workspace/task/activity.routes.js";
 import { notificationRoutes } from "@/modules/notification/notification.routes.js";
 import { PORT } from "@/utils/env.js";
 import multipart from "@fastify/multipart";
 import { uploadRoutes } from "@/modules/uploads/upload.routes.js";
+import { attachmentUploadRoutes } from "@/modules/attachments/attachment.routes.js";
 
 const fastify = Fastify({ logger: true });
 
@@ -88,9 +90,7 @@ fastify.get("/api/ably/sse", async (request, reply) => {
 });
 
 await fastify.register(multipart, {
-  limits: {
-    fileSize: 10 * 1024 * 1024,
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 await fastify.register(accountRoutes);
@@ -101,12 +101,12 @@ await fastify.register(columnRoutes);
 await fastify.register(taskRoutes);
 await fastify.register(subtaskRoutes);
 await fastify.register(commentRoutes);
+await fastify.register(attachmentRoutes);
 await fastify.register(activityRoutes);
 await fastify.register(notificationRoutes);
 await fastify.register(searchRoutes);
-await fastify.register(uploadRoutes, {
-  prefix: "/api/v1",
-});
+await fastify.register(uploadRoutes, { prefix: "/api/v1" });
+await fastify.register(attachmentUploadRoutes);
 
 fastify.listen(
   {
