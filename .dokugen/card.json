@@ -1,0 +1,20 @@
+{
+  "title": "Harbor",
+  "tagline": "Build with heart.",
+  "techStack": [],
+  "theme": "light",
+  "url": "",
+  "author": "",
+  "version": "",
+  "logo": "",
+  "buttons": [
+    {
+      "label": "Get Started",
+      "variant": "primary"
+    },
+    {
+      "label": "View GitHub",
+      "variant": "secondary"
+    }
+  ]
+}

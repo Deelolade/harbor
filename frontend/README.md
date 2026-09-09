@@ -1,75 +1,83 @@
-# React + TypeScript + Vite
+# Harbor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Harbor helps teams organize work into projects and kanban boards. It takes the chaos out of team collaboration by providing a clean interface for managing tasks, subtasks, and member activity. Teams get a straightforward way to plan and ship work without complicated setups.
 
-Currently, two official plugins are available:
+## Description
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Harbor is a modern workspace collaboration tool designed to keep teams aligned. From organizing tasks on customizable Kanban boards to tracking real-time activity streams, it provides everything needed to manage projects effectively. The intuitive interface ensures that members can focus on shipping features rather than fighting with the tool. 
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Workspace Management**: Create dedicated workspaces and invite team members to collaborate securely.
+* **Kanban Boards**: Organize work across custom columns with full drag and drop task management.
+* **Detailed Tasks**: Track progress with subtasks, file attachments, priority levels, and task comments.
+* **Real-Time Activity**: Stay updated with live activity streams and notification alerts for all workspace events.
+* **Role-Based Access**: Manage permissions effectively with owner, admin, and member roles.
+* **Command Palette**: Navigate quickly between projects and settings using keyboard shortcuts.
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Clone the Repository:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+git clone https://github.com/Deelolade/harbor.git
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Navigate to the project directory:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd harbor
 ```
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+Create a `.env` file in the root directory and configure the API endpoint.
+
+```env
+VITE_API_URL=http://localhost:8800
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+## Usage
+
+After launching the application, users can sign up for a new account or log in with existing credentials. Once authenticated, users start by creating a new workspace and inviting team members via email. 
+
+To organize work, navigate to the workspace dashboard and create a new project. Within a project, teams can define custom Kanban columns to match their workflow. Users can then create tasks, assign them to specific team members, attach relevant files, and communicate through task comments. The command palette can be accessed at any time to jump quickly between different boards or settings.
+
+## Technologies Used
+
+| Technology | Description |
+| :--- | :--- |
+| [React](https://react.dev/) | UI Library |
+| [TypeScript](https://www.typescriptlang.org/) | Type Safety |
+| [Vite](https://vitejs.dev/) | Build Tool |
+| [Tailwind CSS](https://tailwindcss.com/) | Styling |
+| [TanStack Query](https://tanstack.com/query/latest) | Data Fetching |
+| [dnd-kit](https://dndkit.com/) | Drag and Drop Interactions |
+
+## Contributing
+
+Contributions are welcome. Feel free to open issues or submit pull requests to help improve the project. Ensure that your code follows the existing style guidelines and passes all linting checks before submitting a pull request.
+
+## Author Info
+
+* LinkedIn: https://linkedin.com/in/deelolade
+* X: https://x.com/deelolade
+
+## Built With
+
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+[![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://dokugen.samueltuoyo.com)
